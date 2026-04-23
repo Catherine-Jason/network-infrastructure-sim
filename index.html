@@ -17,6 +17,22 @@
 
 
     <canvas id="networkCanvas"></canvas>
+    <div id="inspectorPanel" class="inspector hidden">
+    <h2>Device Inspector</h2>
+    <p><strong>Type:</strong> <span id="inspType"></span></p>
+    <p><strong>ID:</strong> <span id="inspId"></span></p>
+    <p><strong>Status:</strong> <span id="inspState"></span></p>
+    <p><strong>Connections:</strong></p>
+    <ul id="inspConnections"></ul>
+
+    <h3>Change State</h3>
+    <button onclick="updateInspectorState('unconfigured')">Unconfigured</button>
+    <button onclick="updateInspectorState('in-progress')">In‑Progress</button>
+    <button onclick="updateInspectorState('configured')">Configured</button>
+
+    <button class="closeBtn" onclick="closeInspector()">Close</button>
+</div>
+
 
     <script src="main.js"></script>
 </body>
