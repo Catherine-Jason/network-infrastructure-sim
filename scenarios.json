@@ -1,0 +1,40 @@
+{
+    "smallOffice": {
+        "name": "Small Office LAN",
+        "devices": [
+            {
+                "name": "Router",
+                "config": "ip address 192.168.1.1 255.255.255.0",
+                "hint": "Assign the gateway IP.",
+                "struggle": "Routers must have an interface IP.",
+                "completed": false
+            },
+            {
+                "name": "PC",
+                "config": "ip address 192.168.1.10 255.255.255.0",
+                "hint": "Same subnet as router.",
+                "struggle": "PC must match subnet.",
+                "completed": false
+            }
+        ]
+    },
+    "lollipopWAN": {
+        "name": "Lollipop WAN",
+        "devices": [
+            {
+                "name": "Router A",
+                "config": "encapsulation ppp",
+                "hint": "Use PPP encapsulation.",
+                "struggle": "Both sides must match PPP.",
+                "completed": false
+            },
+            {
+                "name": "Router B",
+                "config": "encapsulation ppp",
+                "hint": "Match Router A.",
+                "struggle": "Encapsulation mismatch breaks WAN.",
+                "completed": false
+            }
+        ]
+    }
+}

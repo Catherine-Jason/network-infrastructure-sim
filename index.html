@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Infrastructure Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="top-bar">
+        <h1>Network Infrastructure Simulator</h1>
+
+        <select id="scenarioSelect">
+            <option value="">Select a Scenario</option>
+        </select>
+
+        <button id="startBtn">Start Simulation</button>
+    </header>
+
+    <p class="credit">Created by Catherine Jason</p>
+
+    <main class="sim-container">
+        <div id="topologyArea" class="topology-area">
+            <p class="placeholder">Select a scenario to begin...</p>
+        </div>
+    </main>
+
+    <!-- MODAL -->
+    <div id="deviceModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="deviceTitle"></h2>
+
+            <textarea id="configInput" placeholder="Enter configuration..."></textarea>
+
+            <div class="modal-buttons">
+                <button id="validateBtn">Validate</button>
+                <button id="hintBtn">Hint</button>
+                <button id="closeModalBtn">Close</button>
+            </div>
+
+            <p id="feedback" class="feedback"></p>
+        </div>
+    </div>
+
+    <!-- POPUPS -->
+    <div id="hintPopup" class="popup hidden">
+        <div class="popup-content">
+            <h3>Hint</h3>
+            <p id="hintText"></p>
+            <button id="closeHintBtn">Close</button>
+        </div>
+    </div>
+
+    <div id="strugglePopup" class="popup hidden">
+        <div class="popup-content">
+            <h3>Need Help?</h3>
+            <p id="struggleText"></p>
+            <button id="closeStruggleBtn">Got It</button>
+        </div>
+    </div>
+
+    <div id="successPopup" class="popup hidden">
+        <div class="popup-content">
+            <h2>Simulation Complete!</h2>
+            <p id="summaryText"></p>
+            <button id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
