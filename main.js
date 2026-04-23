@@ -285,3 +285,59 @@ window.startPingMode = function () {
   pingSource = selectedForLink;
   alert("Now click a target device to ping");
 };
+
+// =========================
+// PHASE 5 — INSPECTOR PANEL
+// =========================
+
+let inspectorDevice = null;
+
+canvas.addEventListener("click", (e) => {
+    const mouse = getMouse(e);
+    const hit = getDeviceAtPoint(mouse);
+
+    if (hit) {
+        openInspector(hit);
+    }
+});
+
+function openInspector(device) {
+    inspectorDevice = device;
+
+    document.getElementById("inspType").textContent = device.type;
+    document.getElementById("inspId").textContent = device.id;
+    document.getElementById("inspState").textContent = device.state;
+
+    const list = document.getElementById("inspConnections");
+    list.innerHTML = "";
+
+    const connected = connections.filter(c => c.from === device.id || c.to === device.id);
+
+    connected.forEach(c => {
+        const otherId = c.from === device.id ? c.to : c.from;
+        const other = devices.find(d => d.id === otherId);
+
+        const li = document.createElement("li");
+        li.textContent = `${other.type} (${other.id})`;
+        list.appendChild(li);
+    });
+
+    document.getElementById("inspectorPanel").classList.remove("hidden");
+    document.getElementById("inspectorPanel").classList.add("visible");
+}
+
+function closeInspector() {
+    document.getElementById("inspectorPanel").classList.remove("visible");
+    document.getElementById("inspectorPanel").classList.add("hidden");
+    inspectorDevice = null;
+}
+
+function updateInspectorState(newState) {
+    if (!inspectorDevice) return;
+
+    inspectorDevice.state = newState;
+    document.getElementById("inspState").textContent = newState;
+
+    draw(); // refresh canvas
+}
+
