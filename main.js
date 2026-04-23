@@ -459,3 +459,122 @@ function restartScenario() {
     document.getElementById("successPopup").classList.add("hidden");
     loadScenario(currentScenario.file);
 }
+
+// =========================
+// PHASE 6 — SCENARIO SYSTEM
+// =========================
+
+let currentScenario = null;
+
+// Load scenario list
+fetch("scenarios/scenarioList.json")
+    .then(res => res.json())
+    .then(list => {
+        const select = document.getElementById("scenarioSelect");
+        list.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.file;
+            opt.textContent = s.name;
+            select.appendChild(opt);
+        });
+    });
+
+document.getElementById("scenarioSelect").addEventListener("change", function () {
+    if (!this.value) return;
+    loadScenario(this.value);
+});
+
+function loadScenario(file) {
+    fetch("scenarios/" + file)
+        .then(res => res.json())
+        .then(data => {
+            currentScenario = data;
+            resetCanvas();
+            applyScenario(data);
+        });
+}
+
+function resetCanvas() {
+    devices = [];
+    connections = [];
+    packet = null;
+    selectedForLink = null;
+    pingSource = null;
+    pingTarget = null;
+}
+
+function applyScenario(s) {
+    // Add devices
+    s.devices.forEach(d => {
+        devices.push({
+            id: d.id,
+            type: d.type,
+            x: d.x,
+            y: d.y,
+            radius: 30,
+            state: d.state
+        });
+    });
+
+    // Add connections
+    s.connections.forEach(c => {
+        connections.push({ from: c.from, to: c.to });
+    });
+
+    draw();
+}
+
+// VALIDATION
+function validateScenario() {
+    if (!currentScenario) return;
+
+    let correct = true;
+
+    // Check connections
+    currentScenario.requiredConnections.forEach(req => {
+        const exists = connections.some(c =>
+            (c.from === req.from && c.to === req.to) ||
+            (c.from === req.to && c.to === req.from)
+        );
+        if (!exists) correct = false;
+    });
+
+    // Check states
+    currentScenario.requiredStates.forEach(req => {
+        const d = devices.find(x => x.id === req.id);
+        if (!d || d.state !== req.state) correct = false;
+    });
+
+    if (correct) showSuccess();
+    else showStruggle();
+}
+
+// POPUP FUNCTIONS
+function showHint() {
+    document.getElementById("hintText").textContent = currentScenario.hint;
+    document.getElementById("hintPopup").classList.remove("hidden");
+}
+
+function closeHint() {
+    document.getElementById("hintPopup").classList.add("hidden");
+}
+
+function showStruggle() {
+    document.getElementById("struggleText").textContent = currentScenario.struggle;
+    document.getElementById("strugglePopup").classList.remove("hidden");
+}
+
+function closeStruggle() {
+    document.getElementById("strugglePopup").classList.add("hidden");
+}
+
+function showSuccess() {
+    document.getElementById("summaryText").textContent = currentScenario.success;
+    document.getElementById("successPopup").classList.remove("hidden");
+}
+
+function restartScenario() {
+    closeStruggle();
+    document.getElementById("successPopup").classList.add("hidden");
+    loadScenario(currentScenario.file);
+}
