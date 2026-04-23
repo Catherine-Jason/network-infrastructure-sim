@@ -1,0 +1,26 @@
+{
+    "name": "Lollipop WAN",
+    "file": "lollipopWAN.json",
+
+    "devices": [
+        { "id": 1, "type": "router", "x": 200, "y": 200, "state": "unconfigured" },
+        { "id": 2, "type": "router", "x": 500, "y": 200, "state": "unconfigured" }
+    ],
+
+    "connections": [
+        { "from": 1, "to": 2 }
+    ],
+
+    "requiredConnections": [
+        { "from": 1, "to": 2 }
+    ],
+
+    "requiredStates": [
+        { "id": 1, "state": "configured" },
+        { "id": 2, "state": "configured" }
+    ],
+
+    "hint": "Both routers must use PPP encapsulation.",
+    "struggle": "WAN links fail if encapsulation mismatches.",
+    "success": "PPP encapsulation configured correctly!"
+}
