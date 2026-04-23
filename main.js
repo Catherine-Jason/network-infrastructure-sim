@@ -342,8 +342,23 @@ function updateInspectorState(newState) {
 }
 
 // =========================
-// PHASE 6 — SCENARIO SYSTEM
+// PHASE 6 — SCENARIO SYSTEM (CLEAN + UPGRADED)
 // =========================
+
+// NEW ICONS (cleaner + cyber)
+const icons = {
+    router: "🛜",
+    switch: "🖧",
+    pc: "🖥️"
+};
+
+// NEW STATE COLORS (green = good, red = error)
+const stateColors = {
+    unconfigured: "#444a5a",
+    "in-progress": "#e6c300",
+    configured: "#00ff88",
+    error: "#ff4444"
+};
 
 let currentScenario = null;
 
@@ -384,8 +399,8 @@ function resetCanvas() {
     pingTarget = null;
 }
 
+// Apply scenario devices + connections
 function applyScenario(s) {
-    // Add devices
     s.devices.forEach(d => {
         devices.push({
             id: d.id,
@@ -397,7 +412,6 @@ function applyScenario(s) {
         });
     });
 
-    // Add connections
     s.connections.forEach(c => {
         connections.push({ from: c.from, to: c.to });
     });
@@ -411,7 +425,6 @@ function validateScenario() {
 
     let correct = true;
 
-    // Check connections
     currentScenario.requiredConnections.forEach(req => {
         const exists = connections.some(c =>
             (c.from === req.from && c.to === req.to) ||
@@ -420,7 +433,6 @@ function validateScenario() {
         if (!exists) correct = false;
     });
 
-    // Check states
     currentScenario.requiredStates.forEach(req => {
         const d = devices.find(x => x.id === req.id);
         if (!d || d.state !== req.state) correct = false;
@@ -430,7 +442,7 @@ function validateScenario() {
     else showStruggle();
 }
 
-// POPUP FUNCTIONS
+// POPUPS
 function showHint() {
     document.getElementById("hintText").textContent = currentScenario.hint;
     document.getElementById("hintPopup").classList.remove("hidden");
@@ -461,121 +473,52 @@ function restartScenario() {
 }
 
 // =========================
-// PHASE 6 — SCENARIO SYSTEM
+// PACKET UPGRADE (MAIL ICON)
 // =========================
 
-let currentScenario = null;
+function drawPacket() {
+    if (!packet) return;
 
-// Load scenario list
-fetch("scenarios/scenarioList.json")
-    .then(res => res.json())
-    .then(list => {
-        const select = document.getElementById("scenarioSelect");
-        list.forEach(s => {
-            const opt = document.createElement("option");
-            opt.value = s.file;
-            opt.textContent = s.name;
-            select.appendChild(opt);
-        });
-    });
+    let p = packet;
+    let a = p.points[p.index];
+    let b = p.points[p.index + 1];
 
-document.getElementById("scenarioSelect").addEventListener("change", function () {
-    if (!this.value) return;
-    loadScenario(this.value);
-});
+    if (!b) {
+        // SUCCESS — turn router green
+        pingSource.state = "configured";
+        draw();
+        packet = null;
+        return;
+    }
 
-function loadScenario(file) {
-    fetch("scenarios/" + file)
-        .then(res => res.json())
-        .then(data => {
-            currentScenario = data;
-            resetCanvas();
-            applyScenario(data);
-        });
+    let x = a.x + (b.x - a.x) * p.progress;
+    let y = a.y + (b.y - a.y) * p.progress;
+
+    ctx.font = "22px Arial";
+    ctx.fillStyle = "#00ffcc";
+    ctx.fillText("✉️", x, y);
+
+    p.progress += 0.02;
+
+    if (p.progress >= 1) {
+        p.index++;
+        p.progress = 0;
+    }
 }
 
-function resetCanvas() {
-    devices = [];
-    connections = [];
-    packet = null;
-    selectedForLink = null;
-    pingSource = null;
-    pingTarget = null;
-}
+// Override ping failure to turn router red
+const originalStartPing = startPing;
+startPing = function () {
+    const path = findPath(pingSource.id, pingTarget.id);
 
-function applyScenario(s) {
-    // Add devices
-    s.devices.forEach(d => {
-        devices.push({
-            id: d.id,
-            type: d.type,
-            x: d.x,
-            y: d.y,
-            radius: 30,
-            state: d.state
-        });
-    });
+    if (!path) {
+        pingSource.state = "error";
+        draw();
+        alert("❌ Ping failed: No path found");
+        pingSource = null;
+        pingTarget = null;
+        return;
+    }
 
-    // Add connections
-    s.connections.forEach(c => {
-        connections.push({ from: c.from, to: c.to });
-    });
-
-    draw();
-}
-
-// VALIDATION
-function validateScenario() {
-    if (!currentScenario) return;
-
-    let correct = true;
-
-    // Check connections
-    currentScenario.requiredConnections.forEach(req => {
-        const exists = connections.some(c =>
-            (c.from === req.from && c.to === req.to) ||
-            (c.from === req.to && c.to === req.from)
-        );
-        if (!exists) correct = false;
-    });
-
-    // Check states
-    currentScenario.requiredStates.forEach(req => {
-        const d = devices.find(x => x.id === req.id);
-        if (!d || d.state !== req.state) correct = false;
-    });
-
-    if (correct) showSuccess();
-    else showStruggle();
-}
-
-// POPUP FUNCTIONS
-function showHint() {
-    document.getElementById("hintText").textContent = currentScenario.hint;
-    document.getElementById("hintPopup").classList.remove("hidden");
-}
-
-function closeHint() {
-    document.getElementById("hintPopup").classList.add("hidden");
-}
-
-function showStruggle() {
-    document.getElementById("struggleText").textContent = currentScenario.struggle;
-    document.getElementById("strugglePopup").classList.remove("hidden");
-}
-
-function closeStruggle() {
-    document.getElementById("strugglePopup").classList.add("hidden");
-}
-
-function showSuccess() {
-    document.getElementById("summaryText").textContent = currentScenario.success;
-    document.getElementById("successPopup").classList.remove("hidden");
-}
-
-function restartScenario() {
-    closeStruggle();
-    document.getElementById("successPopup").classList.add("hidden");
-    loadScenario(currentScenario.file);
-}
-
+    originalStartPing();
+};
