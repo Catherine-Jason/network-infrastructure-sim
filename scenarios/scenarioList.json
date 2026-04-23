@@ -1,0 +1,4 @@
+[
+    { "name": "Small Office LAN", "file": "smallOffice.json" },
+    { "name": "Lollipop WAN", "file": "lollipopWAN.json" }
+]
