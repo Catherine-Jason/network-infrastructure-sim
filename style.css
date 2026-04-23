@@ -57,3 +57,53 @@ body {
 canvas {
     filter: drop-shadow(0 0 6px #00eaff55);
 }
+
+/* INSPECTOR PANEL */
+.inspector {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: rgba(15, 25, 40, 0.95);
+    border-left: 1px solid #00eaff55;
+    box-shadow: -4px 0 20px #00eaff33;
+    padding: 20px;
+    color: #ccefff;
+    transform: translateX(100%);
+    transition: 0.3s ease;
+    backdrop-filter: blur(6px);
+}
+
+.inspector.visible {
+    transform: translateX(0);
+}
+
+.inspector h2 {
+    margin-bottom: 10px;
+    color: #00eaff;
+}
+
+.inspector button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: #0d1b2a;
+    color: #00eaff;
+    border: 1px solid #00eaff55;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.inspector button:hover {
+    background: #112a45;
+    box-shadow: 0 0 10px #00eaffaa;
+}
+
+.closeBtn {
+    margin-top: 20px;
+    background: #aa1133;
+    border-color: #ff3355;
+}
+
