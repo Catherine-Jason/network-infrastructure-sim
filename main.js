@@ -8,6 +8,9 @@ let devices = [];
 let connections = [];
 let dragging = null;
 let selectedForLink = null;
+let pingSource = null;
+let pingTarget = null;
+let packet = null; // For animation
 
 // DEVICE ICONS
 const icons = {
@@ -18,9 +21,9 @@ const icons = {
 
 // DEVICE STATE COLORS
 const stateColors = {
-  unconfigured: "#444a5a",   // gray-blue
-  "in-progress": "#e6c300",  // yellow
-  configured: "#00ff88"      // green
+  unconfigured: "#444a5a",
+  "in-progress": "#e6c300",
+  configured: "#00ff88"
 };
 
 // Create device
@@ -31,7 +34,7 @@ function addDevice(type) {
     x: Math.random() * (canvas.width - 200) + 100,
     y: Math.random() * (canvas.height - 200) + 100,
     radius: 30,
-    state: "unconfigured" // Phase 2 addition
+    state: "configured" // For Phase 3, assume all devices are configured
   });
   draw();
 }
@@ -59,7 +62,14 @@ canvas.addEventListener("mousedown", (e) => {
   const hit = getDeviceAtPoint(mouse);
 
   if (hit) {
-    // If we already have a selected device, try to create a connection
+    // If selecting ping source
+    if (pingSource && pingSource.id !== hit.id) {
+      pingTarget = hit;
+      startPing();
+      return;
+    }
+
+    // If selecting for linking
     if (selectedForLink && selectedForLink.id !== hit.id) {
       createConnection(selectedForLink, hit);
       selectedForLink = null;
@@ -67,7 +77,7 @@ canvas.addEventListener("mousedown", (e) => {
       return;
     }
 
-    // Select device for linking
+    // Select device
     dragging = hit;
     selectedForLink = hit;
     draw();
@@ -99,95 +109,18 @@ function createConnection(a, b) {
   );
   if (exists) return;
 
-  connections.push({
-    from: a.id,
-    to: b.id
-  });
+  connections.push({ from: a.id, to: b.id });
 }
 
-// Phase 2: Change device state (for testing)
-window.setDeviceState = function (id, newState) {
-  const d = devices.find(x => x.id === id);
-  if (!d) return;
-  d.state = newState;
-  draw();
-};
+// BFS pathfinding
+function findPath(startId, endId) {
+  let queue = [[startId]];
+  let visited = new Set([startId]);
 
-// Draw grid
-function drawGrid() {
-  ctx.strokeStyle = "#111a2e";
-  ctx.lineWidth = 1;
+  while (queue.length > 0) {
+    let path = queue.shift();
+    let node = path[path.length - 1];
 
-  for (let x = 0; x < canvas.width; x += 40) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
+    if (node === endId) return path;
 
-  for (let y = 0; y < canvas.height; y += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-}
-
-// Draw connections
-function drawConnections() {
-  ctx.strokeStyle = "#00ffcc";
-  ctx.lineWidth = 2;
-
-  connections.forEach(c => {
-    const a = devices.find(d => d.id === c.from);
-    const b = devices.find(d => d.id === c.to);
-    if (!a || !b) return;
-
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  });
-}
-
-// Draw devices
-function drawDevices() {
-  devices.forEach(d => {
-    // Glow if selected
-    if (selectedForLink && selectedForLink.id === d.id) {
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, d.radius + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = "#00ffcc";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-
-    // Device body (state color)
-    ctx.beginPath();
-    ctx.fillStyle = stateColors[d.state] || "#444";
-    ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Icon
-    ctx.fillStyle = "#00ffcc";
-    ctx.font = "22px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(icons[d.type] || "❓", d.x, d.y);
-  });
-}
-
-// Main render
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
-  drawConnections();
-  drawDevices();
-}
-
-function animate() {
-  draw();
-  requestAnimationFrame(animate);
-}
-
-animate();
+    let neighbors
