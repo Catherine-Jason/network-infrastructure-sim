@@ -9,21 +9,29 @@ let connections = [];
 let dragging = null;
 let selectedForLink = null;
 
-// DEVICE ICONS (simple emojis for now — upgrade later)
+// DEVICE ICONS
 const icons = {
   router: "📡",
   switch: "🔀",
   pc: "💻"
 };
 
-// Create device (called from HTML buttons)
+// DEVICE STATE COLORS
+const stateColors = {
+  unconfigured: "#444a5a",   // gray-blue
+  "in-progress": "#e6c300",  // yellow
+  configured: "#00ff88"      // green
+};
+
+// Create device
 function addDevice(type) {
   devices.push({
     id: Date.now() + Math.random(),
     type,
     x: Math.random() * (canvas.width - 200) + 100,
     y: Math.random() * (canvas.height - 200) + 100,
-    radius: 30
+    radius: 30,
+    state: "unconfigured" // Phase 2 addition
   });
   draw();
 }
@@ -59,13 +67,11 @@ canvas.addEventListener("mousedown", (e) => {
       return;
     }
 
-    // If no selected device yet, start dragging OR select for linking
-    // Left click drag, but we’ll also use it for selection
+    // Select device for linking
     dragging = hit;
     selectedForLink = hit;
     draw();
   } else {
-    // Clicked empty space → clear selection
     selectedForLink = null;
     dragging = null;
     draw();
@@ -87,7 +93,6 @@ canvas.addEventListener("mouseup", () => {
 
 // Connection logic
 function createConnection(a, b) {
-  // Prevent duplicates (A-B or B-A)
   const exists = connections.some(c =>
     (c.from === a.id && c.to === b.id) ||
     (c.from === b.id && c.to === a.id)
@@ -100,7 +105,15 @@ function createConnection(a, b) {
   });
 }
 
-// Draw grid background
+// Phase 2: Change device state (for testing)
+window.setDeviceState = function (id, newState) {
+  const d = devices.find(x => x.id === id);
+  if (!d) return;
+  d.state = newState;
+  draw();
+};
+
+// Draw grid
 function drawGrid() {
   ctx.strokeStyle = "#111a2e";
   ctx.lineWidth = 1;
@@ -140,7 +153,7 @@ function drawConnections() {
 // Draw devices
 function drawDevices() {
   devices.forEach(d => {
-    // Outer glow if selected for linking
+    // Glow if selected
     if (selectedForLink && selectedForLink.id === d.id) {
       ctx.beginPath();
       ctx.arc(d.x, d.y, d.radius + 6, 0, Math.PI * 2);
@@ -149,9 +162,9 @@ function drawDevices() {
       ctx.stroke();
     }
 
-    // Node body
+    // Device body (state color)
     ctx.beginPath();
-    ctx.fillStyle = "#111a2e";
+    ctx.fillStyle = stateColors[d.state] || "#444";
     ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
     ctx.fill();
 
@@ -172,7 +185,6 @@ function draw() {
   drawDevices();
 }
 
-// Animation loop (optional, but keeps it smooth)
 function animate() {
   draw();
   requestAnimationFrame(animate);
