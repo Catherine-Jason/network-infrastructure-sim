@@ -8,7 +8,12 @@
 </head>
 <body>
 
+<select id="scenarioSelect" class="scenarioSelect">
+    <option value="">Select Scenario</option>
+</select>
+
 <div class="toolbar">
+
     <button onclick="addDevice('router')">Router 📡</button>
     <button onclick="addDevice('switch')">Switch 🔀</button>
     <button onclick="addDevice('pc')">PC 💻</button>
@@ -35,5 +40,31 @@
 
 
     <script src="main.js"></script>
+
+    <!-- POPUPS -->
+<div id="hintPopup" class="popup hidden">
+    <div class="popup-content">
+        <h3>Hint</h3>
+        <p id="hintText"></p>
+        <button onclick="closeHint()">Close</button>
+    </div>
+</div>
+
+<div id="strugglePopup" class="popup hidden">
+    <div class="popup-content">
+        <h3>Need Help?</h3>
+        <p id="struggleText"></p>
+        <button onclick="closeStruggle()">Got It</button>
+    </div>
+</div>
+
+<div id="successPopup" class="popup hidden">
+    <div class="popup-content">
+        <h2>Simulation Complete!</h2>
+        <p id="summaryText"></p>
+        <button onclick="restartScenario()">Play Again</button>
+    </div>
+</div>
+
 </body>
 </html>
