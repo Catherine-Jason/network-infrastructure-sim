@@ -1,3 +1,5 @@
+import { draw } from "./ui/canvasRenderer.js";
+
 import { startPing, drawPacket } from "./engine/ping.js";
 
 import { findPath } from "./engine/pathfinding.js";
