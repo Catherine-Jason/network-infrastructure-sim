@@ -7,6 +7,32 @@ import { startPing, drawPacket } from "./engine/ping.js";
 import { findPath } from "./engine/pathfinding.js";
 
 import { State } from "./engine/state.js";
+import { draw } from "./ui/canvasRenderer.js";
+import { Controller } from "./controller/controller.js";
+
+const canvas = document.getElementById("networkCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function loop() {
+    draw(ctx);
+    requestAnimationFrame(loop);
+}
+loop();
+
+canvas.addEventListener("click", e => {
+    const rect = canvas.getBoundingClientRect();
+    Controller.handleCanvasClick(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+    );
+});
+
+// Buttons
+window.addDevice = Controller.addDevice;
+window.startPingMode = Controller.startPingMode;
 
 const canvas = document.getElementById("networkCanvas");
 const ctx = canvas.getContext("2d");
