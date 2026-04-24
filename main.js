@@ -1,3 +1,5 @@
+import { openInspector, closeInspector, updateInspectorState } from "./ui/inspectorUI.js";
+
 import { draw } from "./ui/canvasRenderer.js";
 
 import { startPing, drawPacket } from "./engine/ping.js";
