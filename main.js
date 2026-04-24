@@ -6,14 +6,6 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let devices = [];
-let connections = [];
-let dragging = null;
-let selectedForLink = null;
-let pingSource = null;
-let pingTarget = null;
-let packet = null; // For animation
-
 // DEVICE ICONS
 const icons = {
   router: "📡",
