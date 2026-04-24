@@ -47,10 +47,10 @@ export function drawPacket(ctx) {
         return;
     }
 
+    // Interpolate position between waypoints
     let x = a.x + (b.x - a.x) * p.progress;
     let y = a.y + (b.y - a.y) * p.progress;
 
-    // ✉️ YOUR ICON HERE
     ctx.font = "22px Arial";
     ctx.fillStyle = "#00ffcc";
     ctx.textAlign = "center";
@@ -64,19 +64,3 @@ export function drawPacket(ctx) {
         p.progress = 0;
     }
 }
-    // Interpolate
-    let x = a.x + (b.x - a.x) * p.progress;
-    let y = a.y + (b.y - a.y) * p.progress;
-
-    ctx.font = "22px Arial";
-    ctx.fillStyle = "#00ffcc";
-    ctx.fillText("✉️", x, y);
-
-    p.progress += 0.02;
-
-    if (p.progress >= 1) {
-        p.index++;
-        p.progress = 0;
-    }
-}
-
