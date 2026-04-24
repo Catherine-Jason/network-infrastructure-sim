@@ -114,39 +114,6 @@ function createConnection(a, b) {
   connections.push({ from: a.id, to: b.id });
 }
 
-// Start ping animation
-function startPing() {
-  const path = findPath(pingSource.id, pingTarget.id);
-
-  if (!path) {
-    alert("❌ Ping failed: No path found");
-    pingSource = null;
-    pingTarget = null;
-    return;
-  }
-
-  // Convert device IDs to coordinates
-  let points = path.map(id => {
-    let d = devices.find(x => x.id === id);
-    return { x: d.x, y: d.y };
-  });
-
-  packet = {
-    points,
-    index: 0,
-    progress: 0
-  };
-}
-
-// Draw packet animation
-function drawPacket() {
-  if (!packet) return;
-
-  let p = packet;
-  let a = p.points[p.index];
-  let b = p.points[p.index + 1];
-
-  if (!b) {
     // Reached destination
     ctx.fillStyle = "#00ff88";
     ctx.font = "20px Arial";
