@@ -19,16 +19,7 @@
     <button onclick="addDevice('pc')">PC 💻</button>
     <button onclick="startPingMode()">Ping 📡</button>
 </div>
-
-    canvas.addEventListener("mousemove", (e) => {
-    const rect = canvas.getBoundingClientRect();
-
-    Controller.handleMouseMove(
-        e.clientX - rect.left,
-        e.clientY - rect.top
-    );
-});
-
+    
     <canvas id="networkCanvas"></canvas>
     <div id="inspectorPanel" class="inspector hidden">
     <h2>Device Inspector</h2>
@@ -46,9 +37,8 @@
     <button class="closeBtn" onclick="closeInspector()">Close</button>
 </div>
 
-
-    <script src="main.js"></script>
-
+    <script type="module" src="main.js"></script>
+    
     <!-- POPUPS -->
 <div id="hintPopup" class="popup hidden">
     <div class="popup-content">
