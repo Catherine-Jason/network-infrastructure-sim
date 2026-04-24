@@ -144,55 +144,6 @@ function createConnection(a, b) {
   }
 }
 
-// Draw grid
-function drawGrid() {
-  ctx.strokeStyle = "#111a2e";
-  ctx.lineWidth = 1;
-
-  for (let x = 0; x < canvas.width; x += 40) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-
-  for (let y = 0; y < canvas.height; y += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-}
-
-// Draw connections
-function drawConnections() {
-  ctx.strokeStyle = "#00ffcc";
-  ctx.lineWidth = 2;
-
-  connections.forEach(c => {
-    const a = devices.find(d => d.id === c.from);
-    const b = devices.find(d => d.id === c.to);
-    if (!a || !b) return;
-
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-  });
-}
-
-// Draw devices
-function drawDevices() {
-  devices.forEach(d => {
-    // Glow if selected
-    if (selectedForLink && selectedForLink.id === d.id) {
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, d.radius + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = "#00ffcc";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-
     // Device body
     ctx.beginPath();
     ctx.fillStyle = stateColors[d.state] || "#444";
@@ -207,29 +158,6 @@ function drawDevices() {
     ctx.fillText(icons[d.type] || "❓", d.x, d.y);
   });
 }
-
-// Main render
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
-  drawConnections();
-  drawDevices();
-  drawPacket();
-}
-
-function animate() {
-  draw();
-  requestAnimationFrame(animate);
-}
-
-animate();
-
-// EXPOSE PING FUNCTION
-window.startPingMode = function () {
-  if (!selectedForLink) return alert("Click a device to start ping");
-  pingSource = selectedForLink;
-  alert("Now click a target device to ping");
-};
 
 // =========================
 // PHASE 5 — INSPECTOR PANEL
@@ -282,8 +210,6 @@ function updateInspectorState(newState) {
 
     inspectorDevice.state = newState;
     document.getElementById("inspState").textContent = newState;
-
-    draw(); // refresh canvas
 }
 
 // =========================
