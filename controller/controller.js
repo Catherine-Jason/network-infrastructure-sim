@@ -3,22 +3,69 @@
 // Handles UI events, engine calls, and scenario loading
 
 import { State } from "../engine/state.js";
-import { Engine } from "../engine/engine.js";
-import { startPing } from "../engine/ping.js";
+import { ScenarioEngine } from "../engine/scenarioEngine.js";
+import { openInspector } from "../ui/inspectorUI.js";
 
 export const Controller = {
 
+    currentDevice: null,
+    mode: null,
+
     addDevice(type) {
-        Engine.addDevice(type, 200 + Math.random()*300, 200);
+        State.devices.push({
+            id: Date.now(),
+            type,
+            x: 200,
+            y: 200,
+            radius: 30,
+            state: "unconfigured"
+        });
     },
 
-    handleCanvasClick(x, y) {
-        const hit = Engine.getDeviceAt(x, y);
+    handleClick(x, y) {
+        const hit = State.devices.find(d =>
+            Math.hypot(d.x - x, d.y - y) < d.radius
+        );
 
-        if (!hit) {
-            State.selectedForLinkId = null;
+        if (!hit) return;
+
+        if (this.mode === "ping") {
+            if (!State.pingSourceId) {
+                State.pingSourceId = hit.id;
+            } else {
+                State.pingTargetId = hit.id;
+            }
             return;
         }
+
+        this.currentDevice = hit;
+        State.selectedDeviceId = hit.id;
+
+        openInspector(hit);
+    },
+
+    handleMouseMove(x, y) {
+        const hit = State.devices.find(d =>
+            Math.hypot(d.x - x, d.y - y) < d.radius
+        );
+
+        State.hoverDeviceId = hit ? hit.id : null;
+    },
+
+    startPingMode() {
+        this.mode = "ping";
+        State.pingSourceId = null;
+        State.pingTargetId = null;
+    },
+
+    loadScenario(scenario) {
+        ScenarioEngine.load(scenario);
+    },
+
+    checkScenario() {
+        return ScenarioEngine.validate();
+    }
+};
 
         if (State.mode === "ping") {
             if (!State.pingSourceId) {
