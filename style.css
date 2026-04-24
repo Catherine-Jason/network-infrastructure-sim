@@ -146,3 +146,80 @@ canvas {
     width: 300px;
     text-align: center;
 }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at center, rgba(0, 234, 255, 0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+canvas {
+    filter: drop-shadow(0 0 8px #00eaff33);
+    animation: glowPulse 4s infinite ease-in-out;
+}
+
+@keyframes glowPulse {
+    0% { filter: drop-shadow(0 0 5px #00eaff22); }
+    50% { filter: drop-shadow(0 0 12px #00eaff55); }
+    100% { filter: drop-shadow(0 0 5px #00eaff22); }
+}
+
+.inspector {
+    background: linear-gradient(180deg, rgba(15,25,40,0.98), rgba(10,15,30,0.98));
+    box-shadow:
+        -6px 0 30px rgba(0, 234, 255, 0.2),
+        inset 0 0 20px rgba(0, 234, 255, 0.05);
+}
+
+.inspector h2 {
+    position: relative;
+}
+
+.inspector h2::after {
+    content: "● LIVE";
+    font-size: 10px;
+    color: #00ff88;
+    margin-left: 8px;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.toolbar button:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 5px #00eaff55;
+}
+
+.popup-content {
+    background: linear-gradient(145deg, #0d1b2a, #0a1624);
+    box-shadow:
+        0 0 25px rgba(0, 234, 255, 0.25),
+        inset 0 0 10px rgba(0, 234, 255, 0.1);
+    animation: popupIn 0.25s ease-out;
+}
+
+@keyframes popupIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.toolbar,
+.inspector,
+.scenarioSelect,
+.popup-content {
+    z-index: 10;
+}
+
