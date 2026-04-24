@@ -143,3 +143,8 @@ window.addEventListener("keydown", (e) => {
             break;
     }
 });
+
+import { closeInspector, updateInspectorState } from "./ui/inspectorUI.js";
+
+window.closeInspector = closeInspector;
+window.updateInspectorState = updateInspectorState;
