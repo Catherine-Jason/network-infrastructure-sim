@@ -1,3 +1,5 @@
+import { startPing, drawPacket } from "./engine/ping.js";
+
 import { findPath } from "./engine/pathfinding.js";
 
 import { State } from "./engine/state.js";
