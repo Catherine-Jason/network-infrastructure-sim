@@ -33,21 +33,37 @@ export function startPing(devices, connections) {
 }
 
 export function drawPacket(ctx) {
-    const packet = State.packet;
-    if (!packet) return;
+    const p = State.packet;
+    if (!p) return;
 
-    let p = packet;
     let a = p.points[p.index];
     let b = p.points[p.index + 1];
 
     if (!b) {
-        // Reached destination
         State.packet = null;
         State.pingSourceId = null;
         State.pingTargetId = null;
+        alert("✅ Ping success");
         return;
     }
 
+    let x = a.x + (b.x - a.x) * p.progress;
+    let y = a.y + (b.y - a.y) * p.progress;
+
+    // ✉️ YOUR ICON HERE
+    ctx.font = "22px Arial";
+    ctx.fillStyle = "#00ffcc";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("✉️", x, y);
+
+    p.progress += 0.03;
+
+    if (p.progress >= 1) {
+        p.index++;
+        p.progress = 0;
+    }
+}
     // Interpolate
     let x = a.x + (b.x - a.x) * p.progress;
     let y = a.y + (b.y - a.y) * p.progress;
