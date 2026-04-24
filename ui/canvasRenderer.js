@@ -3,13 +3,66 @@
 import { State } from "../engine/state.js";
 import { drawPacket } from "../engine/ping.js";
 
+const icons = {
+    router: "🛜",
+    switch: "🖧",
+    pc: "🖥️"
+};
+
+const stateColors = {
+    unconfigured: "#444a5a",
+    "in-progress": "#e6c300",
+    configured: "#00ff88",
+    error: "#ff4444"
+};
+
 export function draw(ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    drawGrid(ctx);
     drawConnections(ctx);
     drawDevices(ctx);
-    drawPacket(ctx); // packet animation
+    drawPacket(ctx);
+}
+
+// =========================
+// DEVICES (WITH HOVER + SELECT)
+// =========================
+function drawDevices(ctx) {
+    State.devices.forEach(d => {
+
+        const isSelected = State.selectedDeviceId === d.id;
+        const isHover = State.hoverDeviceId === d.id;
+        const isPingSource = State.pingSourceId === d.id;
+        const isPingTarget = State.pingTargetId === d.id;
+
+        // Base circle
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
+
+        ctx.fillStyle = stateColors[d.state] || "#444";
+        ctx.fill();
+
+        // Glow priority
+        if (isPingSource || isPingTarget) {
+            ctx.strokeStyle = "#00ffff";
+        } else if (isSelected) {
+            ctx.strokeStyle = "#00ff88";
+        } else if (isHover) {
+            ctx.strokeStyle = "#00aaff";
+        } else {
+            ctx.strokeStyle = "#1e90ff";
+        }
+
+        ctx.lineWidth = isSelected || isHover ? 4 : 2;
+        ctx.stroke();
+
+        // ICON
+        ctx.fillStyle = "#00eaff";
+        ctx.font = "22px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(icons[d.type] || "❓", d.x, d.y);
+    });
 }
 
 function drawGrid(ctx) {
