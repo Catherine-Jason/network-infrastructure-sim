@@ -41,4 +41,3 @@ export function render() {
         renderDevice(ctx, device);
     }
 }
-
