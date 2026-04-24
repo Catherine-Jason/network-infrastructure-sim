@@ -1,68 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Infrastructure Simulator</title>
+    <title>Network Simulator</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<select id="scenarioSelect" class="scenarioSelect">
-    <option value="">Select Scenario</option>
-</select>
+    <!-- Device Controls -->
+    <div id="controlsPanel">
+        <button id="addRouter">Add Router</button>
+        <button id="addSwitch">Add Switch</button>
+        <button id="addPC">Add PC</button>
+        <button id="addCloud">Add Cloud</button>
+    </div>
 
-<div class="toolbar">
+    <!-- Inspector Panel -->
+    <div id="inspectorPanel"></div>
 
-    <button onclick="addDevice('router')">Router 📡</button>
-    <button onclick="addDevice('switch')">Switch 🔀</button>
-    <button onclick="addDevice('pc')">PC 💻</button>
-    <button onclick="startPingMode()">Ping 📡</button>
-</div>
-    
+    <!-- Practice Mode Panel -->
+    <div id="practicePanel">
+        <h3>Practice Mode</h3>
+        <p><strong>Concept:</strong> <span id="practiceConcept"></span></p>
+        <p><strong>Expected:</strong> <span id="practiceExpected"></span></p>
+        <input id="practiceInput" placeholder="Type answer...">
+        <button id="practiceNext">Next</button>
+    </div>
+
+    <!-- Terminal -->
+    <div id="terminal">
+        <pre id="terminalOutput"></pre>
+        <input id="terminalInput" placeholder="Enter command...">
+    </div>
+
+    <!-- Popup -->
+    <div id="popup"></div>
+
+    <!-- Canvas -->
     <canvas id="networkCanvas"></canvas>
-    <div id="inspectorPanel" class="inspector hidden">
-    <h2>Device Inspector</h2>
-    <p><strong>Type:</strong> <span id="inspType"></span></p>
-    <p><strong>ID:</strong> <span id="inspId"></span></p>
-    <p><strong>Status:</strong> <span id="inspState"></span></p>
-    <p><strong>Connections:</strong></p>
-    <ul id="inspConnections"></ul>
-
-    <h3>Change State</h3>
-    <button onclick="updateInspectorState('unconfigured')">Unconfigured</button>
-    <button onclick="updateInspectorState('in-progress')">In‑Progress</button>
-    <button onclick="updateInspectorState('configured')">Configured</button>
-
-    <button class="closeBtn" onclick="closeInspector()">Close</button>
-</div>
 
     <script type="module" src="main.js"></script>
-    
-    <!-- POPUPS -->
-<div id="hintPopup" class="popup hidden">
-    <div class="popup-content">
-        <h3>Hint</h3>
-        <p id="hintText"></p>
-        <button onclick="closeHint()">Close</button>
-    </div>
-</div>
-
-<div id="strugglePopup" class="popup hidden">
-    <div class="popup-content">
-        <h3>Need Help?</h3>
-        <p id="struggleText"></p>
-        <button onclick="closeStruggle()">Got It</button>
-    </div>
-</div>
-
-<div id="successPopup" class="popup hidden">
-    <div class="popup-content">
-        <h2>Simulation Complete!</h2>
-        <p id="summaryText"></p>
-        <button onclick="restartScenario()">Play Again</button>
-    </div>
-</div>
-
 </body>
 </html>
+p
