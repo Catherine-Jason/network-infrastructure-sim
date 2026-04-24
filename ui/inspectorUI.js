@@ -1,34 +1,47 @@
-// Inspector panel UI logic
-import { State } from "../engine/state.js";
+// ==========================================
+// INSPECTOR UI — SHOW DEVICE DETAILS
+// ==========================================
 
-export function openInspector(device) {
-    State.selectedDeviceId = device.id;
+import { EventBus } from "../core/eventBus.js";
+import { getDeviceById } from "../core/state.js";
 
-    const panel = document.getElementById("inspectorPanel");
+let panel;
 
-    document.getElementById("inspType").textContent = device.type;
-    document.getElementById("inspId").textContent = device.id;
-    document.getElementById("inspState").textContent = device.state;
+export function initInspectorUI() {
+    panel = document.getElementById("inspectorPanel");
 
-    panel.classList.add("visible");
-    panel.classList.remove("hidden");
+    EventBus.on("deviceSelected", device => {
+        renderInspector(device);
+    });
 }
 
-export function closeInspector() {
-    const panel = document.getElementById("inspectorPanel");
-
-    panel.classList.remove("visible");
-    panel.classList.add("hidden");
-
-    State.selectedDeviceId = null;
+function renderInspector(device) {
+    panel.innerHTML = `
+        <h3>${device.name}</h3>
+        <p>Type: ${device.type}</p>
+        <p>ID: ${device.id}</p>
+        <hr>
+        ${renderInterfaces(device)}
+    `;
 }
 
-export function updateInspectorState(newState) {
-    const device = State.devices.find(d => d.id === State.selectedDeviceId);
-    if (!device) return;
+function renderInterfaces(device) {
+    if (!device.interfaces) return "<p>No interfaces</p>";
 
-    device.state = newState;
+    let html = "<h4>Interfaces</h4>";
 
-    // instantly refresh UI text
-    document.getElementById("inspState").textContent = newState;
+    for (const name in device.interfaces) {
+        const intf = device.interfaces[name];
+        html += `
+            <div class="intf">
+                <strong>${name}</strong><br>
+                IP: ${intf.ip || "none"}<br>
+                Mask: ${intf.mask || "none"}<br>
+                VLAN: ${intf.vlan || "none"}<br>
+                Trunk: ${intf.trunk ? "yes" : "no"}<br>
+            </div>
+        `;
+    }
+
+    return html;
 }
