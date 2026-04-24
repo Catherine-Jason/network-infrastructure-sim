@@ -5,6 +5,12 @@
 import { State } from "../engine/state.js";
 import { ScenarioEngine } from "../engine/scenarioEngine.js";
 import { openInspector } from "../ui/inspectorUI.js";
+import { LearningEngine } from "../engine/learningEngine.js";
+
+loadScenario(scenario) {
+    ScenarioEngine.load(scenario);
+    LearningEngine.reset();
+}
 
 export const Controller = {
 
