@@ -17,14 +17,6 @@ canvas.height = window.innerHeight;
 const devices = State.devices;
 const connections = State.connections;
 
-
-// DEVICE ICONS
-const icons = {
-  router: "📡",
-  switch: "🔀",
-  pc: "💻"
-};
-
 // DEVICE STATE COLORS
 const stateColors = {
   unconfigured: "#444a5a",
