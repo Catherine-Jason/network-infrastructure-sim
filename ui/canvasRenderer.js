@@ -19,30 +19,29 @@ const stateColors = {
 export function draw(ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+    drawGrid(ctx);
     drawConnections(ctx);
     drawDevices(ctx);
     drawPacket(ctx);
 }
 
 // =========================
-// DEVICES (WITH HOVER + SELECT)
+// DEVICES (HOVER / SELECT / PING)
 // =========================
 function drawDevices(ctx) {
-    State.devices.forEach(d => {
-
-        const isSelected = State.selectedDeviceId === d.id;
-        const isHover = State.hoverDeviceId === d.id;
+    for (const d of State.devices) {
+        const isSelected   = State.selectedDeviceId === d.id;
+        const isHover      = State.hoverDeviceId === d.id;
         const isPingSource = State.pingSourceId === d.id;
         const isPingTarget = State.pingTargetId === d.id;
 
-        // Base circle
+        // Base device
         ctx.beginPath();
         ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
-
-        ctx.fillStyle = stateColors[d.state] || "#444";
+        ctx.fillStyle = stateColors[d.state] ?? "#444";
         ctx.fill();
 
-        // Glow priority
+        // Stroke priority
         if (isPingSource || isPingTarget) {
             ctx.strokeStyle = "#00ffff";
         } else if (isSelected) {
@@ -53,18 +52,43 @@ function drawDevices(ctx) {
             ctx.strokeStyle = "#1e90ff";
         }
 
-        ctx.lineWidth = isSelected || isHover ? 4 : 2;
+        ctx.lineWidth = (isSelected || isHover) ? 4 : 2;
         ctx.stroke();
 
-        // ICON
+        // Icon
         ctx.fillStyle = "#00eaff";
         ctx.font = "22px Arial";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(icons[d.type] || "❓", d.x, d.y);
-    });
+        ctx.fillText(icons[d.type] ?? "❓", d.x, d.y);
+    }
 }
 
+// =========================
+// CONNECTIONS
+// =========================
+function drawConnections(ctx) {
+    ctx.strokeStyle = "#00aaff";
+    ctx.lineWidth = 3;
+
+    for (const c of State.connections) {
+        const a = State.deviceMap?.get(c.from) 
+               ?? State.devices.find(d => d.id === c.from);
+        const b = State.deviceMap?.get(c.to)
+               ?? State.devices.find(d => d.id === c.to);
+
+        if (!a || !b) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+    }
+}
+
+// =========================
+// GRID
+// =========================
 function drawGrid(ctx) {
     ctx.strokeStyle = "#2a2f3a";
     ctx.lineWidth = 1;
@@ -83,22 +107,3 @@ function drawGrid(ctx) {
         ctx.stroke();
     }
 }
-
-function drawConnections(ctx) {
-    ctx.strokeStyle = "#00aaff";
-    ctx.lineWidth = 3;
-
-    State.connections.forEach(c => {
-        const a = State.devices.find(d => d.id === c.from);
-        const b = State.devices.find(d => d.id === c.to);
-        if (!a || !b) return;
-
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-    });
-}
-
-
-
