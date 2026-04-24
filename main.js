@@ -1,3 +1,5 @@
+import { State } from "./engine/state.js";
+
 const canvas = document.getElementById("networkCanvas");
 const ctx = canvas.getContext("2d");
 
