@@ -1,1 +1,12 @@
+[
+  { "id": "scenario0_practice", "name": "Practice Mode" },
+  { "id": "scenario1_basicLAN", "name": "Basic LAN" },
+  { "id": "scenario2_smallOffice", "name": "Small Office" },
+  { "id": "scenario3_singleVLAN", "name": "Single VLAN" },
+  { "id": "scenario4_multiVLAN", "name": "Multi‑VLAN" },
+  { "id": "scenario5_lollipopVLAN", "name": "Lollipop VLAN" },
+  { "id": "scenario6_staticRouting", "name": "Static Routing" },
+  { "id": "scenario7_dynamicRouting", "name": "Dynamic Routing (RIP)" },
+  { "id": "scenario8_cloudPass", "name": "Cloud Pass‑Through" }
+]
 
