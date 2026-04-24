@@ -100,21 +100,5 @@ function drawConnections(ctx) {
     });
 }
 
-function drawDevices(ctx) {
-    State.devices.forEach(d => {
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "#1e2430";
-        ctx.fill();
 
-        ctx.strokeStyle = "#00ccff";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "20px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(d.type, d.x, d.y + 6);
-    });
-}
 
