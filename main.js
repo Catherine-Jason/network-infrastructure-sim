@@ -11,17 +11,14 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-const canvas = document.getElementById("networkCanvas");
+window.onload = () => {
+    const canvas = document.getElementById("networkCanvas");
+};
 const ctx = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// RENDER LOOP ONLY
-function loop() {
-    draw(ctx);
-    requestAnimationFrame(loop);
-}
 loop();
 
 // EVENTS → CONTROLLER ONLY
