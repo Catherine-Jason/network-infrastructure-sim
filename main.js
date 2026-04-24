@@ -1,6 +1,15 @@
 import { Controller } from "./controller/controller.js";
 import { draw } from "./ui/canvasRenderer.js";
 import { State } from "./engine/state.js";
+import { LearningEngine } from "./engine/learningEngine.js";
+
+function loop() {
+    draw(ctx);
+
+    LearningEngine.update(); // 👈 THIS IS THE KEY ADDITION
+
+    requestAnimationFrame(loop);
+}
 
 const canvas = document.getElementById("networkCanvas");
 const ctx = canvas.getContext("2d");
