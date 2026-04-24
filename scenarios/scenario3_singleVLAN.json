@@ -1,1 +1,26 @@
+{
+  "id": "scenario3_singleVLAN",
+  "name": "Single VLAN",
+  "devices": [
+    { "type": "pc", "name": "PC1", "x": 150, "y": 250, "interface": { "ip": "192.168.10.10", "mask": "255.255.255.0", "gateway": "192.168.10.1", "vlan": "10" } },
+    { "type": "pc", "name": "PC2", "x": 150, "y": 350, "interface": { "ip": "192.168.10.20", "mask": "255.255.255.0", "gateway": "192.168.10.1", "vlan": "10" } },
+    { "type": "switch", "name": "SW1", "x": 350, "y": 300 },
+    { "type": "router", "name": "R1", "x": 550, "y": 300, "interfaces": { "g0/0": { "ip": "192.168.10.1", "mask": "255.255.255.0" } } }
+  ],
+  "links": [
+    { "id": "L1", "a": "pc_1", "b": "switch_1" },
+    { "id": "L2", "a": "pc_2", "b": "switch_1" },
+    { "id": "L3", "a": "switch_1", "b": "router_1" }
+  ],
+  "validation": [
+    { "type": "vlan", "device": "switch_1", "interface": "f0/1", "vlan": "10" },
+    { "type": "vlan", "device": "switch_1", "interface": "f0/2", "vlan": "10" },
+    { "type": "ping", "source": "pc_1", "target": "pc_2" }
+  ],
+  "hints": [
+    "Assign VLAN 10 to PC ports.",
+    "Ensure SW1 ports are access mode.",
+    "Verify R1 g0/0 IP."
+  ]
+}
 
