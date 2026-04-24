@@ -1,1 +1,45 @@
+{
+  "id": "scenario2_smallOffice",
+  "name": "Small Office",
+  "devices": [
+    {
+      "type": "pc",
+      "name": "PC1",
+      "x": 150,
+      "y": 300,
+      "interface": {
+        "ip": "10.0.0.10",
+        "mask": "255.255.255.0",
+        "gateway": "10.0.0.1"
+      }
+    },
+    {
+      "type": "switch",
+      "name": "SW1",
+      "x": 350,
+      "y": 300
+    },
+    {
+      "type": "router",
+      "name": "R1",
+      "x": 550,
+      "y": 300,
+      "interfaces": {
+        "g0/0": { "ip": "10.0.0.1", "mask": "255.255.255.0" }
+      }
+    }
+  ],
+  "links": [
+    { "id": "L1", "a": "pc_1", "b": "switch_1" },
+    { "id": "L2", "a": "switch_1", "b": "router_1" }
+  ],
+  "validation": [
+    { "type": "ping", "source": "pc_1", "target": "router_1" }
+  ],
+  "hints": [
+    "Check PC1's default gateway.",
+    "Ensure SW1 ports are in access mode.",
+    "Verify R1 g0/0 IP address."
+  ]
+}
 
