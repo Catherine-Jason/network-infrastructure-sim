@@ -1,23 +1,34 @@
 // Inspector panel UI logic
-
 import { State } from "../engine/state.js";
 
 export function openInspector(device) {
-    const panel = document.getElementById("inspector");
-    panel.classList.remove("hidden");
+    State.selectedDeviceId = device.id;
 
-    document.getElementById("inspector-title").textContent = device.type;
-    document.getElementById("inspector-id").textContent = device.id;
-    document.getElementById("inspector-state").textContent = device.state;
+    const panel = document.getElementById("inspectorPanel");
+
+    document.getElementById("inspType").textContent = device.type;
+    document.getElementById("inspId").textContent = device.id;
+    document.getElementById("inspState").textContent = device.state;
+
+    panel.classList.add("visible");
+    panel.classList.remove("hidden");
 }
 
 export function closeInspector() {
-    const panel = document.getElementById("inspector");
+    const panel = document.getElementById("inspectorPanel");
+
+    panel.classList.remove("visible");
     panel.classList.add("hidden");
+
+    State.selectedDeviceId = null;
 }
 
-export function updateInspectorState(device) {
-    const el = document.getElementById("inspector-state");
-    if (el) el.textContent = device.state;
-}
+export function updateInspectorState(newState) {
+    const device = State.devices.find(d => d.id === State.selectedDeviceId);
+    if (!device) return;
 
+    device.state = newState;
+
+    // instantly refresh UI text
+    document.getElementById("inspState").textContent = newState;
+}
