@@ -1,1 +1,23 @@
+{
+  "id": "scenario8_cloudPass",
+  "name": "Cloud Pass‑Through",
+  "devices": [
+    { "type": "pc", "name": "PC1", "x": 150, "y": 300, "interface": { "ip": "192.168.1.10", "mask": "255.255.255.0" } },
+    { "type": "cloud", "name": "CLOUD1", "x": 350, "y": 300 },
+    { "type": "pc", "name": "PC2", "x": 550, "y": 300, "interface": { "ip": "192.168.1.20", "mask": "255.255.255.0" } }
+  ],
+  "links": [
+    { "id": "L1", "a": "pc_1", "b": "cloud_1" },
+    { "id": "L2", "a": "cloud_1", "b": "pc_2" }
+  ],
+  "validation": [
+    { "type": "cloud", "device": "cloud_1", "mode": "transparent" },
+    { "type": "ping", "source": "pc_1", "target": "pc_2" }
+  ],
+  "hints": [
+    "Set cloud mode to transparent.",
+    "Ensure both PCs are in same subnet.",
+    "Verify IP addresses."
+  ]
+}
 
