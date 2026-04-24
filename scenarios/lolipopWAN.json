@@ -1,6 +1,6 @@
 {
     "name": "Lollipop WAN",
-    "file": "lolipopWAN.json",
+    "file": "lollipopWAN.json",
 
     "devices": [
         { "id": 1, "type": "router", "x": 200, "y": 200, "state": "unconfigured" },
