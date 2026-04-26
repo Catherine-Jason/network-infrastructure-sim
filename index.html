@@ -3,90 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Simulator – Test</title>
+    <title>Network Simulator – Working Version</title>
     <style>
-        body { background: #0d1117; font-family: monospace; padding: 20px; color: #eee; }
+        body { background: #0d1117; font-family: monospace; padding: 20px; color: #eee; display: flex; gap: 20px; flex-wrap: wrap; }
         canvas { background: #0d1117; border: 1px solid #1a2a3a; cursor: crosshair; }
-        #controls { margin: 10px 0; }
-        button { background: #1e3a5f; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
-        #inspector, #terminal { background: #0a0f1a; border: 1px solid #1a2a3a; padding: 10px; margin-top: 10px; width: 300px; }
-        #terminal { display: none; }
-        #terminalOutput { height: 100px; overflow-y: auto; background: #00000033; padding: 5px; }
+        #controls { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        button { background: #1e3a5f; border: none; color: white; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        #panel { background: #0a0f1a; border: 1px solid #1a2a3a; padding: 10px; width: 260px; }
+        #terminal { display: none; margin-top: 10px; }
+        #terminalOutput { height: 120px; overflow-y: auto; background: #00000033; padding: 5px; }
+        #terminalInput { width: 100%; background: #000; color: #0f0; border: 1px solid #1e90ff; }
+        .task { background: #00000033; margin: 5px 0; padding: 4px; }
+        .completed { background: #1a3320; text-decoration: line-through; }
     </style>
 </head>
 <body>
-<canvas id="networkCanvas" width="900" height="500"></canvas>
-<div id="controls">
-    <button id="btnAddPC">➕ Add PC</button>
+<div>
+    <div id="controls">
+        <button id="addRouter">🔵 Router</button>
+        <button id="addSwitch">🟢 Switch</button>
+        <button id="addPC">💻 PC</button>
+        <button id="addFirewall">🧱 Firewall</button>
+        <button id="addServer">📀 Server</button>
+        <button id="addCloud">☁️ Cloud</button>
+        <button id="addAP">📶 AP</button>
+    </div>
+    <canvas id="canvas" width="1000" height="500"></canvas>
 </div>
-<div id="inspector">Select a device</div>
-<div id="terminal">
-    <div id="terminalOutput"></div>
-    <input id="terminalInput" type="text" placeholder="Enter command..." autocomplete="off">
+<div id="panel">
+    <h3>Inspector</h3>
+    <div id="inspector">Select a device</div>
+    <div id="terminal">
+        <div id="terminalOutput"></div>
+        <input id="terminalInput" type="text" placeholder="Command...">
+    </div>
+    <h3>Current Level: <span id="levelName">Practice Mode</span></h3>
+    <div id="tasks"></div>
+    <button id="nextLevelBtn" style="display:none;">Next Level →</button>
+    <button id="levelSelectBtn">📚 Level Select</button>
 </div>
 
 <script>
-    // ------------------------------------------------------------------
-    // MINIMAL TEST VERSION – ONLY PC, DRAG, TERMINAL, ipconfig
-    // ------------------------------------------------------------------
-    const canvas = document.getElementById('networkCanvas');
+// --------------------------------------------------------------
+// FULLY WORKING SIMULATOR – SINGLE FILE, NO EXTERNAL DEPS
+// --------------------------------------------------------------
+(function(){
+    // ---------- STATE ----------
+    let devices = [];
+    let links = [];
+    let selectedDeviceId = null;
+    let currentLevel = null;
+    let completedTasks = new Set();
+    let pingSuccesses = [];
+    let commandHistory = [];
+    let allLevels = [];
+    let completedLevels = new Set();
+
+    // Helper
+    function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
+    function showPopup(msg, type='info') { alert(msg); } // simple popup for debugging
+
+    // ---------- DEVICE MODEL ----------
+    function createDevice(type, id, name, x, y) {
+        let interfaces = [];
+        if (type === 'router') interfaces = [{name:'Gig0/0',ip:''},{name:'Gig0/1',ip:''}];
+        else if (type === 'switch') interfaces = [{name:'Fa0/1',ip:''},{name:'Fa0/2',ip:''},{name:'Fa0/3',ip:''},{name:'Fa0/4',ip:''}];
+        else if (type === 'pc') interfaces = [{name:'eth0',ip:''}];
+        else if (type === 'firewall') interfaces = [{name:'eth0',ip:''},{name:'eth1',ip:''}];
+        else if (type === 'server') interfaces = [{name:'eth0',ip:''}];
+        else if (type === 'cloud') interfaces = [{name:'Internet',ip:''}];
+        else if (type === 'accessPoint') interfaces = [{name:'wlan0',ip:''}];
+        return { id: id || generateId(), type, name: name || `${type}_${Math.floor(Math.random()*1000)}`, x, y, interfaces };
+    }
+
+    // ---------- LEVEL DEFINITIONS ----------
+    allLevels = [
+        { id: 'level1', name: 'Practice Mode', tasks: [
+            { id:'p1', type:'deviceExists', deviceType:'pc', minCount:1, desc:'A PC exists' },
+            { id:'p2', type:'commandExecuted', deviceId:'pc_practice', command:'ipconfig', desc:'Type ipconfig in terminal' }
+        ], init: () => {
+            devices = [createDevice('pc', 'pc_practice', 'PC-Practice', 300, 300)];
+            links = [];
+        } },
+        { id: 'level2', name: 'Basic Connectivity', tasks: [
+            { id:'l2t1', type:'deviceExists', deviceType:'switch', minCount:1, desc:'Add a switch' },
+            { id:'l2t2', type:'deviceExists', deviceType:'pc', minCount:2, desc:'Add two PCs' },
+            { id:'l2t3', type:'linkExists', between:['pcA','switch1'], desc:'Connect PC-A to switch' },
+            { id:'l2t4', type:'linkExists', between:['pcB','switch1'], desc:'Connect PC-B to switch' },
+            { id:'l2t5', type:'pingSuccess', from:'pcA', to:'pcB', desc:'Ping PC-B from PC-A' }
+        ], init: () => {
+            devices = [
+                createDevice('switch', 'switch1', 'Switch1', 400, 200),
+                createDevice('pc', 'pcA', 'PC-A', 200, 300),
+                createDevice('pc', 'pcB', 'PC-B', 600, 300)
+            ];
+            links = [];
+        } }
+    ];
+
+    // Load from storage
+    const saved = localStorage.getItem('netSim_completed');
+    if (saved) completedLevels = new Set(JSON.parse(saved));
+
+    // Start with first incomplete level
+    function loadLevel(levelId) {
+        const level = allLevels.find(l => l.id === levelId);
+        if (!level) return;
+        currentLevel = level;
+        completedTasks.clear();
+        pingSuccesses = [];
+        commandHistory = [];
+        level.init();
+        selectedDeviceId = null;
+        render();
+        updateUI();
+    }
+
+    function completeCurrentLevel() {
+        if (!currentLevel) return;
+        completedLevels.add(currentLevel.id);
+        localStorage.setItem('netSim_completed', JSON.stringify([...completedLevels]));
+        const next = allLevels.find(l => !completedLevels.has(l.id));
+        if (next) loadLevel(next.id);
+        else alert('All levels complete!');
+    }
+
+    // ---------- VALIDATION ----------
+    function validateDeviceExists(type, minCount) {
+        return devices.filter(d => d.type === type).length >= minCount;
+    }
+    function validateLinkExists(a,b) {
+        return links.some(l => (l.from===a && l.to===b) || (l.from===b && l.to===a));
+    }
+    function validatePingSuccess(from,to) {
+        return pingSuccesses.some(p => p.from===from && p.to===to);
+    }
+    function validateCommand(deviceId, cmd) {
+        return commandHistory.some(c => c.deviceId === deviceId && c.command === cmd);
+    }
+
+    function reevaluateTasks() {
+        if (!currentLevel) return;
+        for (let task of currentLevel.tasks) {
+            if (completedTasks.has(task.id)) continue;
+            let ok = false;
+            if (task.type === 'deviceExists') ok = validateDeviceExists(task.deviceType, task.minCount);
+            else if (task.type === 'linkExists') ok = validateLinkExists(task.between[0], task.between[1]);
+            else if (task.type === 'pingSuccess') ok = validatePingSuccess(task.from, task.to);
+            else if (task.type === 'commandExecuted') ok = validateCommand(task.deviceId, task.command);
+            if (ok) {
+                completedTasks.add(task.id);
+                updateUI();
+            }
+        }
+        if (currentLevel.tasks.every(t => completedTasks.has(t.id))) {
+            document.getElementById('nextLevelBtn').style.display = 'block';
+        } else {
+            document.getElementById('nextLevelBtn').style.display = 'none';
+        }
+    }
+
+    // ---------- DRAWING (simplified icons) ----------
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    let devices = [
-        { id: 'pc1', type: 'pc', name: 'PC-Test', x: 300, y: 200, interfaces: [{ name: 'eth0', ip: '192.168.1.10', mask: '255.255.255.0' }] }
-    ];
-    let selectedDeviceId = null;
-
-    // Drawing
-    function drawPC(x, y, selected) {
-        ctx.fillStyle = '#2a2a3a';
-        ctx.fillRect(x-20, y-15, 40, 30);
-        ctx.strokeStyle = '#aaaaff';
-        ctx.strokeRect(x-20, y-15, 40, 30);
-        ctx.fillStyle = '#3a3a4a';
-        ctx.fillRect(x+5, y-5, 12, 20);
-        if (selected) {
-            ctx.strokeStyle = '#ffff00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x-22, y-17, 44, 34);
-        }
+    function drawDevice(dev) {
+        const x = dev.x - 25, y = dev.y - 20, w = 50, h = 40;
+        const selected = (selectedDeviceId === dev.id);
+        // Basic shape per type
+        ctx.fillStyle = '#1e3a5f';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = selected ? '#ffff00' : '#1e90ff';
+        ctx.strokeRect(x, y, w, h);
         ctx.fillStyle = '#ccccff';
         ctx.font = '10px monospace';
-        ctx.fillText(devices.find(d=>d.id===selectedDeviceId)?.name || '', x-15, y-20);
+        ctx.fillText(dev.name, x+5, y-3);
+        // Connector dot
+        ctx.beginPath();
+        ctx.arc(x+w, y+h/2, 5, 0, Math.PI*2);
+        ctx.fillStyle = '#5ab4ff';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+        dev.__connector = { x: x+w, y: y+h/2 };
     }
+
+    function drawLinks() {
+        for (let link of links) {
+            const fromDev = devices.find(d => d.id === link.from);
+            const toDev = devices.find(d => d.id === link.to);
+            if (fromDev && toDev && fromDev.__connector && toDev.__connector) {
+                ctx.beginPath();
+                ctx.moveTo(fromDev.__connector.x, fromDev.__connector.y);
+                ctx.lineTo(toDev.__connector.x, toDev.__connector.y);
+                ctx.strokeStyle = '#88aaff';
+                ctx.setLineDash([8,6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+    }
+
+    let tempLink = null; // { startConnector, currentMouse }
 
     function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        devices.forEach(dev => {
-            drawPC(dev.x, dev.y, selectedDeviceId === dev.id);
-        });
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawLinks();
+        for (let dev of devices) drawDevice(dev);
+        if (tempLink) {
+            ctx.beginPath();
+            ctx.moveTo(tempLink.startConnector.x, tempLink.startConnector.y);
+            ctx.lineTo(tempLink.currentMouse.x, tempLink.currentMouse.y);
+            ctx.strokeStyle = '#ffaa33';
+            ctx.setLineDash([6,8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
 
-    // Drag to move
-    let draggingDevice = null;
-    let dragOffsetX, dragOffsetY;
-
+    // ---------- INTERACTIONS ----------
     function getMouseCoords(e) {
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
+        const scaleX = canvas.width/rect.width;
+        const scaleY = canvas.height/rect.height;
         let x = (e.clientX - rect.left) * scaleX;
         let y = (e.clientY - rect.top) * scaleY;
-        x = Math.min(Math.max(0, x), canvas.width);
-        y = Math.min(Math.max(0, y), canvas.height);
-        return { x, y };
+        x = Math.min(Math.max(0,x), canvas.width);
+        y = Math.min(Math.max(0,y), canvas.height);
+        return {x,y};
     }
 
+    // Drag to move device
+    let dragDevice = null, dragOffsetX, dragOffsetY;
     function onMouseDown(e) {
-        const { x, y } = getMouseCoords(e);
+        const {x,y} = getMouseCoords(e);
+        // Check connector click for linking
         for (let dev of devices) {
-            if (Math.hypot(x - dev.x, y - dev.y) < 25) {
-                draggingDevice = dev;
+            const conn = dev.__connector;
+            if (conn && Math.hypot(x-conn.x, y-conn.y) <= 8) {
+                tempLink = { startDevice: dev, startConnector: conn, currentMouse: {x,y} };
+                e.preventDefault();
+                return;
+            }
+        }
+        // Otherwise drag device
+        for (let dev of devices) {
+            const dx = dev.x-25, dy = dev.y-20;
+            if (x>=dx && x<=dx+50 && y>=dy && y<=dy+40) {
+                dragDevice = dev;
                 dragOffsetX = dev.x - x;
                 dragOffsetY = dev.y - y;
                 selectedDeviceId = dev.id;
-                updateInspector();
-                updateTerminal();
+                updateInspectorAndTerminal();
                 render();
                 break;
             }
@@ -94,80 +262,163 @@
     }
 
     function onMouseMove(e) {
-        if (!draggingDevice) return;
-        const { x, y } = getMouseCoords(e);
-        draggingDevice.x = x + dragOffsetX;
-        draggingDevice.y = y + dragOffsetY;
-        render();
+        const {x,y} = getMouseCoords(e);
+        if (tempLink) {
+            tempLink.currentMouse = {x,y};
+            render();
+            return;
+        }
+        if (dragDevice) {
+            dragDevice.x = x + dragOffsetX;
+            dragDevice.y = y + dragOffsetY;
+            render();
+        }
     }
 
-    function onMouseUp() { draggingDevice = null; }
+    function onMouseUp(e) {
+        if (tempLink) {
+            const {x,y} = getMouseCoords(e);
+            let target = null;
+            for (let dev of devices) {
+                if (dev.id === tempLink.startDevice.id) continue;
+                const dx = dev.x-25, dy = dev.y-20;
+                if (x>=dx && x<=dx+50 && y>=dy && y<=dy+40) {
+                    target = dev;
+                    break;
+                }
+            }
+            if (target) {
+                const exists = links.some(l => (l.from===tempLink.startDevice.id && l.to===target.id) || (l.from===target.id && l.to===tempLink.startDevice.id));
+                if (!exists) {
+                    links.push({ from: tempLink.startDevice.id, to: target.id });
+                    reevaluateTasks();
+                    render();
+                }
+            }
+            tempLink = null;
+            render();
+        }
+        dragDevice = null;
+    }
 
     canvas.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // Inspector
-    function updateInspector() {
-        const dev = devices.find(d => d.id === selectedDeviceId);
-        if (!dev) { document.getElementById('inspector').innerHTML = 'Select a device'; return; }
-        let html = `<strong>${dev.name}</strong> (${dev.type})<br>Interfaces:<ul>`;
-        dev.interfaces.forEach(iface => { html += `<li>${iface.name}: ${iface.ip || 'unset'}</li>`; });
-        html += `</ul>`;
-        document.getElementById('inspector').innerHTML = html;
-    }
+    // Click to select
+    canvas.addEventListener('click', (e) => {
+        const {x,y} = getMouseCoords(e);
+        let clicked = null;
+        for (let dev of devices) {
+            const dx = dev.x-25, dy = dev.y-20;
+            if (x>=dx && x<=dx+50 && y>=dy && y<=dy+40) {
+                clicked = dev.id;
+                break;
+            }
+        }
+        selectedDeviceId = clicked;
+        updateInspectorAndTerminal();
+        render();
+    });
 
-    // Terminal
+    // Inspector & Terminal UI
+    const inspectorDiv = document.getElementById('inspector');
     const terminalDiv = document.getElementById('terminal');
     const terminalOutput = document.getElementById('terminalOutput');
     const terminalInput = document.getElementById('terminalInput');
 
-    function updateTerminal() {
-        if (selectedDeviceId) {
-            terminalDiv.style.display = 'block';
-            terminalOutput.innerHTML = `Connected to ${devices.find(d=>d.id===selectedDeviceId)?.name}\n> `;
-            terminalInput.value = '';
-            terminalInput.focus();
-        } else {
+    function updateInspectorAndTerminal() {
+        if (!selectedDeviceId) {
+            inspectorDiv.innerHTML = 'Select a device';
             terminalDiv.style.display = 'none';
+            return;
         }
+        const dev = devices.find(d => d.id === selectedDeviceId);
+        if (!dev) return;
+        let html = `<strong>${dev.name}</strong> (${dev.type})<br>Interfaces:<ul>`;
+        dev.interfaces.forEach(iface => { html += `<li>${iface.name}: ${iface.ip || 'unset'}</li>`; });
+        html += `</ul>`;
+        inspectorDiv.innerHTML = html;
+        terminalDiv.style.display = 'block';
+        terminalOutput.innerHTML = `Connected to ${dev.name}\n> `;
+        terminalInput.value = '';
+        terminalInput.focus();
     }
 
-    function executeCommand(cmd) {
+    function executeCommand() {
         if (!selectedDeviceId) return;
+        const cmd = terminalInput.value.trim().toLowerCase();
         const dev = devices.find(d => d.id === selectedDeviceId);
         let response = '';
         if (cmd === 'ipconfig') {
             response = dev.interfaces.map(i => `${i.name}: ${i.ip || 'unset'}`).join('\n');
+            commandHistory.push({ deviceId: selectedDeviceId, command: 'ipconfig' });
+            reevaluateTasks();
+        } else if (cmd.startsWith('ping ')) {
+            const targetName = cmd.split(' ')[1];
+            const targetDev = devices.find(d => d.name === targetName || d.id === targetName);
+            if (targetDev) {
+                pingSuccesses.push({ from: selectedDeviceId, to: targetDev.id });
+                response = `Ping to ${targetDev.name} successful`;
+                reevaluateTasks();
+            } else response = 'Device not found';
         } else {
-            response = 'Command not recognized';
+            response = 'Unknown command';
         }
         terminalOutput.innerHTML += `<br>> ${cmd}<br>${response}<br>> `;
         terminalInput.value = '';
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
     }
 
-    terminalInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') executeCommand(terminalInput.value.trim());
-    });
+    terminalInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') executeCommand(); });
 
-    // Add PC button
-    document.getElementById('btnAddPC').onclick = () => {
-        const newId = 'pc' + (devices.length + 1);
-        devices.push({
-            id: newId,
-            type: 'pc',
-            name: `PC-${devices.length+1}`,
-            x: Math.random() * (canvas.width - 100) + 50,
-            y: Math.random() * (canvas.height - 100) + 50,
-            interfaces: [{ name: 'eth0', ip: '', mask: '' }]
-        });
+    // UI updates for level panel
+    function updateUI() {
+        if (!currentLevel) return;
+        document.getElementById('levelName').innerText = currentLevel.name;
+        const tasksDiv = document.getElementById('tasks');
+        tasksDiv.innerHTML = currentLevel.tasks.map(t => `<div class="task ${completedTasks.has(t.id) ? 'completed' : ''}">${t.desc}</div>`).join('');
+        if (currentLevel.tasks.every(t => completedTasks.has(t.id))) {
+            document.getElementById('nextLevelBtn').style.display = 'block';
+        } else {
+            document.getElementById('nextLevelBtn').style.display = 'none';
+        }
+    }
+
+    // Button handlers
+    function addDevice(type) {
+        const x = 200 + Math.random() * 300;
+        const y = 200 + Math.random() * 200;
+        const newDev = createDevice(type, null, `${type}_${devices.length+1}`, x, y);
+        devices.push(newDev);
         render();
+        reevaluateTasks();
+    }
+
+    document.getElementById('addRouter').onclick = () => addDevice('router');
+    document.getElementById('addSwitch').onclick = () => addDevice('switch');
+    document.getElementById('addPC').onclick = () => addDevice('pc');
+    document.getElementById('addFirewall').onclick = () => addDevice('firewall');
+    document.getElementById('addServer').onclick = () => addDevice('server');
+    document.getElementById('addCloud').onclick = () => addDevice('cloud');
+    document.getElementById('addAP').onclick = () => addDevice('accessPoint');
+
+    document.getElementById('nextLevelBtn').onclick = () => {
+        const next = allLevels.find(l => !completedLevels.has(l.id));
+        if (next) loadLevel(next.id);
+    };
+    document.getElementById('levelSelectBtn').onclick = () => {
+        const levelList = allLevels.map(l => `${l.name} ${completedLevels.has(l.id) ? '✓' : ''}`).join('\n');
+        const choice = prompt('Select level number:\n' + levelList, '0');
+        const idx = parseInt(choice);
+        if (!isNaN(idx) && idx >=0 && idx < allLevels.length) loadLevel(allLevels[idx].id);
     };
 
+    // Initialize
+    loadLevel('level1');
     render();
-    updateInspector();
-    console.log('Test version loaded – click the PC, then type ipconfig');
+    console.log('Simulator running');
+})();
 </script>
 </body>
 </html>
