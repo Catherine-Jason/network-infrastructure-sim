@@ -7,7 +7,6 @@ App.PingEngine = (function() {
     }
     function getPingSuccesses() { return pingSuccesses; }
     function clearPings() { pingSuccesses = []; }
-
     function simulatePing(fromId, toId) {
         const fromDev = App.Engine.getDevices().find(d => d.id === fromId);
         const toDev = App.Engine.getDevices().find(d => d.id === toId);
