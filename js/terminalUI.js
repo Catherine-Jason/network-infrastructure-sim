@@ -8,8 +8,7 @@ App.TerminalUI = (function() {
         activeDeviceId = deviceId;
         div.style.display = 'flex';
         output.innerHTML = `Connected to ${App.Engine.getDevices().find(d=>d.id===deviceId)?.name}\n> `;
-        input.value = '';
-        input.focus();
+        input.value = ''; input.focus();
     }
     function hide() { div.style.display = 'none'; activeDeviceId = null; }
     function execute(cmd) {
@@ -20,15 +19,14 @@ App.TerminalUI = (function() {
             response = dev.interfaces.map(i => `${i.name}: ${i.ip || 'unset'}`).join('\n');
             App.EventBus.emit('commandExecuted', { deviceId: activeDeviceId, command: cmd });
         } else if (cmd.startsWith('ping ')) {
-            const targetId = cmd.split(' ')[1];
-            const targetDev = App.Engine.getDevices().find(d => d.name === targetId || d.id === targetId);
+            const targetName = cmd.split(' ')[1];
+            const targetDev = App.Engine.getDevices().find(d => d.name === targetName || d.id === targetName);
             if (targetDev) App.PingEngine.simulatePing(activeDeviceId, targetDev.id);
             else response = 'Device not found';
         } else { response = 'Command not recognized'; }
         if (response) output.innerHTML += `<br>> ${cmd}<br>${response}<br>> `;
         else output.innerHTML += `<br>> ${cmd}<br>> `;
-        input.value = '';
-        output.scrollTop = output.scrollHeight;
+        input.value = ''; output.scrollTop = output.scrollHeight;
     }
     input.addEventListener('keypress', e => { if(e.key === 'Enter') execute(input.value.trim()); });
     return { show, hide };
