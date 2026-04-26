@@ -11,38 +11,27 @@ App.LinkController = (function() {
     }
     function onMouseDown(e) {
         const {x,y} = getCoords(e);
-        const devices = App.Engine.getDevices();
-        for (let dev of devices) {
-            const conn = { x: (dev.x-25)+50, y: (dev.y-20)+20 };
-            const dx = x - conn.x, dy = y - conn.y;
-            if (Math.hypot(dx,dy) <= 8) {
-                dragState.active = true;
-                dragState.startDevice = dev;
-                dragState.startConnector = conn;
-                dragState.currentMouse = {x,y};
-                e.preventDefault();
-                break;
+        for (let dev of App.Engine.getDevices()) {
+            const conn = { x: dev.x + 25, y: dev.y };
+            if (Math.hypot(x-conn.x, y-conn.y) <= 8) {
+                dragState.active = true; dragState.startDevice = dev; dragState.startConnector = conn;
+                dragState.currentMouse = {x,y}; e.preventDefault(); break;
             }
         }
     }
     function onMouseMove(e) {
         if (!dragState.active) return;
-        const {x,y} = getCoords(e);
-        dragState.currentMouse = {x,y};
+        dragState.currentMouse = getCoords(e);
         App.EventBus.emit('tempLinkUpdate', dragState);
     }
     function onMouseUp(e) {
         if (!dragState.active) return;
         const {x,y} = getCoords(e);
         let target = null;
-        const devices = App.Engine.getDevices();
-        for (let dev of devices) {
+        for (let dev of App.Engine.getDevices()) {
             if (dev.id === dragState.startDevice.id) continue;
             const dx = dev.x-25, dy = dev.y-20;
-            if (x >= dx && x <= dx+50 && y >= dy && y <= dy+40) {
-                target = dev;
-                break;
-            }
+            if (x >= dx && x <= dx+50 && y >= dy && y <= dy+40) { target = dev; break; }
         }
         if (target) App.Controller.createLink(dragState.startDevice.id, target.id);
         else App.Utils.showPopup('Link cancelled', 'info');
