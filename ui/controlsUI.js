@@ -1,9 +1,8 @@
 // ==========================================
-// CONTROLS UI — DEVICE PALETTE
+// CONTROLS UI — DEVICE PALETTE (UI ONLY)
 // ==========================================
 
 import { createDevice } from "../engine/deviceModel.js";
-import { addDevice } from "../core/state.js";
 import { EventBus } from "../core/eventBus.js";
 
 export function initControlsUI() {
@@ -15,11 +14,10 @@ export function initControlsUI() {
 
 function add(type) {
     const device = createDevice(type, type.toUpperCase());
+
     device.x = 150 + Math.random() * 200;
     device.y = 150 + Math.random() * 200;
 
-    addDevice(device);
-    EventBus.emit("deviceAdded", device);
-    EventBus.emit("canvasRender");
+    // ❗ send to controller instead of mutating state
+    EventBus.emit("requestAddDevice", device);
 }
-
