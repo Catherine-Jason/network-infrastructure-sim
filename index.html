@@ -4,44 +4,48 @@
     <meta charset="UTF-8">
     <title>Network Simulator</title>
 
-    <!-- ✅ NO <base> tag -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Device Controls -->
-    <div id="controlsPanel">
-        <button id="addRouter">Add Router</button>
-        <button id="addSwitch">Add Switch</button>
-        <button id="addPC">Add PC</button>
-        <button id="addCloud">Add Cloud</button>
+    <div id="app">
+
+        <!-- Canvas Container (REQUIRED) -->
+        <div id="canvasContainer">
+            <canvas id="networkCanvas"></canvas>
+        </div>
+
+        <!-- Device Controls -->
+        <div id="controlsPanel">
+            <button id="addRouter">Add Router</button>
+            <button id="addSwitch">Add Switch</button>
+            <button id="addPC">Add PC</button>
+            <button id="addCloud">Add Cloud</button>
+        </div>
+
+        <!-- Inspector Panel -->
+        <div id="inspectorPanel"></div>
+
+        <!-- Practice Mode Panel -->
+        <div id="practicePanel">
+            <h3>Practice Mode</h3>
+            <p><strong>Concept:</strong> <span id="practiceConcept"></span></p>
+            <p><strong>Expected:</strong> <span id="practiceExpected"></span></p>
+            <input id="practiceInput" placeholder="Type answer...">
+            <button id="practiceNext">Next</button>
+        </div>
+
+        <!-- Terminal -->
+        <div id="terminal">
+            <pre id="terminalOutput"></pre>
+            <input id="terminalInput" placeholder="Enter command...">
+        </div>
+
+        <!-- Popup -->
+        <div id="popup"></div>
+
     </div>
 
-    <!-- Inspector Panel -->
-    <div id="inspectorPanel"></div>
-
-    <!-- Practice Mode Panel -->
-    <div id="practicePanel">
-        <h3>Practice Mode</h3>
-        <p><strong>Concept:</strong> <span id="practiceConcept"></span></p>
-        <p><strong>Expected:</strong> <span id="practiceExpected"></span></p>
-        <input id="practiceInput" placeholder="Type answer...">
-        <button id="practiceNext">Next</button>
-    </div>
-
-    <!-- Terminal -->
-    <div id="terminal">
-        <pre id="terminalOutput"></pre>
-        <input id="terminalInput" placeholder="Enter command...">
-    </div>
-
-    <!-- Popup -->
-    <div id="popup"></div>
-
-    <!-- Canvas -->
-    <canvas id="networkCanvas"></canvas>
-
-    <!-- ✅ MAIN ENTRY POINT -->
     <script type="module" src="main.js"></script>
 
 </body>
