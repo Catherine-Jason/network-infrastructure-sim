@@ -27,7 +27,10 @@ async function init() {
     initControlsUI();
     initPopupUI();
     initPracticeUI();
-
+    
+    // Controller (THE BRAIN)
+    initController();
+    
     // Controllers
     initDragController();
     initClickController();
