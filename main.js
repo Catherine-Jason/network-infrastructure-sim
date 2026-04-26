@@ -2,8 +2,6 @@
 // MAIN APP — INITIALIZE EVERYTHING
 // ==========================================
 
-console.log("✅ main.js is running");
-
 import { initController } from "./controller/controller.js";
 import { initCanvasRenderer } from "./ui/canvasRenderer.js";
 import { initDragController } from "./controller/dragController.js";
@@ -20,6 +18,8 @@ import { initPracticeUI } from "./ui/practiceUI.js";
 import { initHintEngine } from "./engine/hintEngine.js";
 import { loadScenarioList, loadScenario } from "./engine/scenarioEngine.js";
 import { EventBus } from "./core/eventBus.js";
+
+console.log("✅ main.js is running");
 
 async function init() {
     // UI
