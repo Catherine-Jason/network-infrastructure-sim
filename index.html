@@ -2,51 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Network Simulator</title>
-
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Network Simulator | Cisco Style</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
     <div id="app">
-
-        <!-- Canvas Container (REQUIRED) -->
         <div id="canvasContainer">
-            <canvas id="networkCanvas"></canvas>
+            <canvas id="networkCanvas" width="1200" height="600"></canvas>
         </div>
 
-        <!-- Device Controls -->
         <div id="controlsPanel">
-            <button id="addRouter">Add Router</button>
-            <button id="addSwitch">Add Switch</button>
-            <button id="addPC">Add PC</button>
-            <button id="addCloud">Add Cloud</button>
+            <button id="btnAddRouter">🔵 Router</button>
+            <button id="btnAddSwitch">🟢 Switch</button>
+            <button id="btnAddPC">💻 PC</button>
+            <button id="btnAddCloud">☁️ Cloud</button>
         </div>
 
-        <!-- Inspector Panel -->
-        <div id="inspectorPanel"></div>
-
-        <!-- Practice Mode Panel -->
-        <div id="practicePanel">
-            <h3>Practice Mode</h3>
-            <p><strong>Concept:</strong> <span id="practiceConcept"></span></p>
-            <p><strong>Expected:</strong> <span id="practiceExpected"></span></p>
-            <input id="practiceInput" placeholder="Type answer...">
-            <button id="practiceNext">Next</button>
+        <div id="inspectorPanel">
+            <h3>Inspector</h3>
+            <div id="inspectorContent">Select a device</div>
         </div>
 
-        <!-- Terminal -->
         <div id="terminal">
-            <pre id="terminalOutput"></pre>
-            <input id="terminalInput" placeholder="Enter command...">
+            <div id="terminalHeader">Terminal</div>
+            <div id="terminalOutput"></div>
+            <input type="text" id="terminalInput" placeholder="Enter command..." autocomplete="off">
         </div>
 
-        <!-- Popup -->
-        <div id="popup"></div>
+        <div id="practicePanel">
+            <div id="practiceHeader">Practice Mode — Level 1</div>
+            <div id="practiceQuestion"></div>
+            <div id="practiceExpected"></div>
+            <input type="text" id="practiceInput" placeholder="Type the correct command...">
+            <button id="practiceSubmit">Submit</button>
+            <div id="practiceFeedback"></div>
+        </div>
 
+        <div id="popup" class="hidden">Message</div>
     </div>
 
-    <script type="module" src="main.js"></script>
+    <!-- Load order: core, engine, ui, controller, main -->
+    <script src="js/core/state.js"></script>
+    <script src="js/core/eventBus.js"></script>
+    <script src="js/core/utils.js"></script>
 
+    <script src="js/engine/deviceModel.js"></script>
+    <script src="js/engine/scenarioEngine.js"></script>
+    <script src="js/engine/scenarioValidator.js"></script>
+    <script src="js/engine/hintEngine.js"></script>
+    <script src="js/engine/pingEngine.js"></script>
+    <script src="js/engine/routingEngine.js"></script>
+    <script src="js/engine/vlanEngine.js"></script>
+
+    <script src="js/ui/canvasRenderer.js"></script>
+    <script src="js/ui/inspectorUI.js"></script>
+    <script src="js/ui/controlsUI.js"></script>
+    <script src="js/ui/terminalUI.js"></script>
+    <script src="js/ui/practiceUI.js"></script>
+    <script src="js/ui/popupUI.js"></script>
+
+    <script src="js/controller/controller.js"></script>
+    <script src="js/controller/dragController.js"></script>
+    <script src="js/controller/clickController.js"></script>
+    <script src="js/controller/linkController.js"></script>
+    <script src="js/controller/terminalController.js"></script>
+
+    <script src="js/main.js"></script>
 </body>
 </html>
