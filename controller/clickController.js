@@ -13,12 +13,11 @@ export function initClickController() {
 }
 
 function onClick(e) {
-    const device = findDeviceAt(e.clientX, e.clientY);
+    const device = findDeviceAt(e.offsetX, e.offsetY);
 
     if (device) {
-        State.ui.selectedDeviceId = device.id;
-        EventBus.emit("canvasRender");
-        EventBus.emit("deviceSelected", device);
+        // ❗ go through controller system
+        EventBus.emit("requestSelectDevice", device.id);
     }
 }
 
@@ -30,4 +29,3 @@ function findDeviceAt(x, y) {
     }
     return null;
 }
-
