@@ -4,7 +4,6 @@ App.LevelSelectUI = (function() {
     const container = document.getElementById('levelButtons');
     const levelNameSpan = document.getElementById('levelName');
     const taskListDiv = document.getElementById('taskList');
-
     function updateTaskDisplay() {
         const level = App.Progression.getCurrentLevel();
         if (!level) return;
@@ -12,7 +11,6 @@ App.LevelSelectUI = (function() {
         const tasks = App.LevelValidator.getTaskStatus();
         taskListDiv.innerHTML = tasks.map(t => `<div class="task-item ${t.completed ? 'completed' : ''}">${t.description}</div>`).join('');
     }
-
     function renderLevelButtons() {
         const allLevels = window.App.Levels;
         const unlockedIds = App.Progression.getUnlockedLevels().map(l => l.id);
@@ -22,24 +20,15 @@ App.LevelSelectUI = (function() {
             </button>
         `).join('');
     }
-
     function openModal() { modal.classList.remove('hidden'); renderLevelButtons(); }
     function closeModal() { modal.classList.add('hidden'); }
-
     document.getElementById('closeModal').onclick = closeModal;
     document.getElementById('nextLevelBtn').onclick = () => {
         const next = window.App.Levels.find(l => !App.Progression.completedLevels().includes(l.id));
         if (next) App.Progression.loadLevel(next.id);
     };
-
-    App.EventBus.on('levelLoaded', () => {
-        updateTaskDisplay();
-        document.getElementById('nextLevelBtn').style.display = 'none';
-    });
-    App.EventBus.on('levelComplete', () => {
-        document.getElementById('nextLevelBtn').style.display = 'block';
-    });
+    App.EventBus.on('levelLoaded', () => { updateTaskDisplay(); document.getElementById('nextLevelBtn').style.display = 'none'; });
+    App.EventBus.on('levelComplete', () => { document.getElementById('nextLevelBtn').style.display = 'block'; });
     App.EventBus.on('tasksUpdated', updateTaskDisplay);
-
     return { openModal, closeModal };
 })();
