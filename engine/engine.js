@@ -1,21 +1,21 @@
-import { State } from "../core/state.js";
+// ==========================================
+// ENGINE — SINGLE SOURCE OF STATE MUTATION
+// ==========================================
+
+import { resetState, addDevice, addLink } from "../core/state.js";
 
 export const Engine = {
 
     reset() {
-        State.devices.length = 0;
-        State.links.length = 0;
-        State.packet = null;
-        State.selectedDeviceId = null;
-        State.selectedForLinkId = null;
+        resetState();
     },
 
     addDevice(device) {
-        State.devices.push(device);
+        addDevice(device);
     },
 
     addConnection(connection) {
-        State.links.push(connection);
+        addLink(connection);
     }
 
 };
