@@ -4,7 +4,6 @@ App.Levels = [
     {
         id: "level1_practice",
         name: "Practice Mode",
-        description: "Learn the basics",
         tasks: [
             { id: "p1", type: "deviceExists", deviceType: "pc", minCount: 1, description: "There is a PC on the canvas" },
             { id: "p2", type: "commandExecuted", deviceId: "pc_practice", command: "ipconfig", description: "Type 'ipconfig' in the terminal" }
@@ -18,7 +17,6 @@ App.Levels = [
     {
         id: "level2_basicLAN",
         name: "Basic Connectivity",
-        description: "Connect two PCs through a switch and ping",
         tasks: [
             { id: "l2t1", type: "deviceExists", deviceType: "switch", minCount: 1, description: "Add a switch" },
             { id: "l2t2", type: "deviceExists", deviceType: "pc", minCount: 2, description: "Add two PCs (PC-A and PC-B)" },
@@ -36,5 +34,4 @@ App.Levels = [
             links: []
         }
     }
-    // Add levels 3-10 here later
 ];
