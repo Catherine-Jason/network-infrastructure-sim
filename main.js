@@ -2,6 +2,8 @@
 // MAIN APP — INITIALIZE EVERYTHING
 // ==========================================
 
+console.log("✅ main.js is running");
+
 import { initController } from "./controller/controller.js";
 import { initCanvasRenderer } from "./ui/canvasRenderer.js";
 import { initDragController } from "./controller/dragController.js";
