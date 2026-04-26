@@ -68,13 +68,6 @@ body {
     overflow: hidden;
 }
 
-/* Canvas */
-#networkCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
 /* Controls Panel */
 #controlsPanel {
     position: absolute;
@@ -271,16 +264,6 @@ body {
 
 #practicePanel button:hover {
     filter: brightness(1.05);
-}
-
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    background: radial-gradient(circle at top, #101632 0, #050814 55%, #02030a 100%);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: var(--text-main);
 }
 
 #app {
