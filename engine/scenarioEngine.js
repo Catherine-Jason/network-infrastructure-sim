@@ -7,14 +7,14 @@ import { EventBus } from "../core/eventBus.js";
 import { createDevice } from "./deviceModel.js";
 
 export async function loadScenarioList() {
-    const res = await fetch("./scenarios/scenarioList.json");
+    const res = await fetch("scenarios/scenarioList.json");
     State.scenarioList = await res.json();
 }
 
 export async function loadScenario(id) {
     resetState();
 
-    const res = await fetch(`./scenarios/${id}.json`);
+    const res = await fetch(`scenarios/${id}.json`);
     const scenario = await res.json();
     State.currentScenario = scenario;
 
