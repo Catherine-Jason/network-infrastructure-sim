@@ -3,8 +3,8 @@ import { State } from "../core/state.js";
 export const Engine = {
 
     reset() {
-        State.devices = [];
-        State.connections = [];
+        State.devices.length = 0;
+        State.connections.length = 0;
         State.packet = null;
         State.selectedDeviceId = null;
         State.selectedForLinkId = null;
