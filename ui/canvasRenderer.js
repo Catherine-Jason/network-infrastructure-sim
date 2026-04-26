@@ -1,5 +1,5 @@
 // ==========================================
-// CANVAS RENDERER — AUTHORITATIVE DRAW LOOP
+// CANVAS RENDERER — AUTHORITATIVE
 // ==========================================
 
 import { State } from "../core/state.js";
@@ -14,19 +14,17 @@ export function initCanvasRenderer() {
     canvas = document.getElementById("networkCanvas");
     ctx = canvas.getContext("2d");
 
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    resize();
+    window.addEventListener("resize", resize);
 
-    // ✅ Always re-render when requested
-    EventBus.on("canvasRender", () => {
-        render();
-    });
+    // ✅ ALWAYS re-render when requested
+    EventBus.on("canvasRender", render);
 
-    // ✅ FIRST render (critical)
+    // ✅ Initial render
     render();
 }
 
-function resizeCanvas() {
+function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
@@ -36,7 +34,7 @@ function render() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw links first
+    // Draw links first (safe even if empty)
     for (const link of State.links) {
         renderLink(ctx, link);
     }
