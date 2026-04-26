@@ -9,25 +9,19 @@ App.DeviceModel = (function() {
             interfaces: []
         };
         if (type === 'router') {
-            device.interfaces = [
-                { name: 'Gig0/0', ip: '', mask: '', vlan: null, enabled: true },
-                { name: 'Gig0/1', ip: '', mask: '', vlan: null, enabled: true }
-            ];
+            device.interfaces = [{ name: 'Gig0/0', ip: '', mask: '' }, { name: 'Gig0/1', ip: '', mask: '' }];
         } else if (type === 'switch') {
-            device.interfaces = [
-                { name: 'Fa0/1', ip: '', mask: '', vlan: 1, enabled: true },
-                { name: 'Fa0/2', ip: '', mask: '', vlan: 1, enabled: true },
-                { name: 'Fa0/3', ip: '', mask: '', vlan: 1, enabled: true },
-                { name: 'Fa0/4', ip: '', mask: '', vlan: 1, enabled: true }
-            ];
+            device.interfaces = [{ name: 'Fa0/1', ip: '' }, { name: 'Fa0/2', ip: '' }, { name: 'Fa0/3', ip: '' }, { name: 'Fa0/4', ip: '' }];
         } else if (type === 'pc') {
-            device.interfaces = [
-                { name: 'eth0', ip: '', mask: '', vlan: null, enabled: true }
-            ];
+            device.interfaces = [{ name: 'eth0', ip: '', mask: '' }];
+        } else if (type === 'firewall') {
+            device.interfaces = [{ name: 'eth0', ip: '' }, { name: 'eth1', ip: '' }];
+        } else if (type === 'server') {
+            device.interfaces = [{ name: 'eth0', ip: '' }];
         } else if (type === 'cloud') {
-            device.interfaces = [
-                { name: 'Internet', ip: '', mask: '', vlan: null, enabled: true }
-            ];
+            device.interfaces = [{ name: 'Internet', ip: '' }];
+        } else if (type === 'accessPoint') {
+            device.interfaces = [{ name: 'wlan0', ip: '' }];
         }
         return device;
     }
