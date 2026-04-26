@@ -4,19 +4,14 @@ App.ClickController = (function() {
     function getCoords(e) {
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
-        let x = (e.clientX-rect.left)*scaleX, y = (e.clientY-rect.top)*scaleY;
-        return {x,y};
+        return { x: (e.clientX-rect.left)*scaleX, y: (e.clientY-rect.top)*scaleY };
     }
     function onClick(e) {
         const {x,y} = getCoords(e);
-        const devices = App.Engine.getDevices();
         let selected = null;
-        for (let dev of devices) {
+        for (let dev of App.Engine.getDevices()) {
             const dx = dev.x-25, dy = dev.y-20;
-            if (x >= dx && x <= dx+50 && y >= dy && y <= dy+40) {
-                selected = dev.id;
-                break;
-            }
+            if (x >= dx && x <= dx+50 && y >= dy && y <= dy+40) { selected = dev.id; break; }
         }
         App.Controller.selectDevice(selected);
     }
