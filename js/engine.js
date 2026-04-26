@@ -7,14 +7,12 @@ App.Engine.addDevice = (type, id, name, x, y) => {
     App.EventBus.emit('deviceAdded', device);
     return device;
 };
-
 App.Engine.addLink = (fromId, toId) => {
     const link = { id: App.Utils.generateId(), from: fromId, to: toId };
     App.Engine._addLink(link);
     App.EventBus.emit('linkCreated', link);
     return link;
 };
-
 App.Engine.removeDevice = (id) => {
     const linksToRemove = App.Engine.getLinks().filter(l => l.from === id || l.to === id);
     linksToRemove.forEach(l => App.Engine._removeLink(l.id));
@@ -22,22 +20,18 @@ App.Engine.removeDevice = (id) => {
     if (App.Engine.getSelectedDeviceId() === id) App.Engine._setSelectedDeviceId(null);
     App.EventBus.emit('deviceRemoved', id);
 };
-
 App.Engine.moveDevice = (id, x, y) => {
     const dev = App.Engine.getDevices().find(d => d.id === id);
     if (dev) { dev.x = x; dev.y = y; App.EventBus.emit('deviceMoved', id); }
 };
-
 App.Engine.selectDevice = (id) => {
     App.Engine._setSelectedDeviceId(id);
     App.EventBus.emit('deviceSelected', id);
 };
-
 App.Engine.clearSelection = () => {
     App.Engine._setSelectedDeviceId(null);
     App.EventBus.emit('deviceSelected', null);
 };
-
 App.Engine.loadScenario = (scenarioData) => {
     App.Engine._setDevices([]);
     App.Engine._setLinks([]);
