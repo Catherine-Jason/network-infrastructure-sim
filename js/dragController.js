@@ -11,22 +11,17 @@ App.DragController = (function() {
     }
     function onMouseDown(e) {
         const {x,y} = getCoords(e);
-        const devices = App.Engine.getDevices();
-        for (let dev of devices) {
-            const dx = dev.x - 25, dy = dev.y - 20;
+        for (let dev of App.Engine.getDevices()) {
+            const dx = dev.x-25, dy = dev.y-20;
             if (x >= dx && x <= dx+50 && y >= dy && y <= dy+40) {
-                dragging = dev;
-                offsetX = x - dev.x;
-                offsetY = y - dev.y;
-                break;
+                dragging = dev; offsetX = x - dev.x; offsetY = y - dev.y; break;
             }
         }
     }
     function onMouseMove(e) {
         if (!dragging) return;
         const {x,y} = getCoords(e);
-        dragging.x = x - offsetX;
-        dragging.y = y - offsetY;
+        dragging.x = x - offsetX; dragging.y = y - offsetY;
         App.Controller.moveDevice(dragging.id, dragging.x, dragging.y);
     }
     function onMouseUp() { dragging = null; }
