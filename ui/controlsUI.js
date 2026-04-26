@@ -1,23 +1,22 @@
 // ==========================================
-// CONTROLS UI — DEVICE PALETTE (UI ONLY)
+// CONTROLS UI — DIRECT RENDER TEST
 // ==========================================
 
 import { createDevice } from "../engine/deviceModel.js";
+import { addDevice } from "../core/state.js";
 import { EventBus } from "../core/eventBus.js";
 
 export function initControlsUI() {
     document.getElementById("addRouter").onclick = () => add("router");
-    document.getElementById("addSwitch").onclick = () => add("switch");
-    document.getElementById("addPC").onclick = () => add("pc");
-    document.getElementById("addCloud").onclick = () => add("cloud");
 }
 
 function add(type) {
     const device = createDevice(type, type.toUpperCase());
+    device.x = 300;
+    device.y = 300;
 
-    device.x = 150 + Math.random() * 200;
-    device.y = 150 + Math.random() * 200;
+    console.log("✅ TEST: adding device directly", device);
 
-    // ❗ send to controller instead of mutating state
-    EventBus.emit("requestAddDevice", device);
+    addDevice(device);
+    EventBus.emit("canvasRender");
 }
