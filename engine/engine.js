@@ -4,7 +4,7 @@ export const Engine = {
 
     reset() {
         State.devices.length = 0;
-        State.connections.length = 0;
+        State.links.length = 0;
         State.packet = null;
         State.selectedDeviceId = null;
         State.selectedForLinkId = null;
@@ -15,7 +15,7 @@ export const Engine = {
     },
 
     addConnection(connection) {
-        State.connections.push(connection);
+        State.links.push(connection);
     }
 
 };
