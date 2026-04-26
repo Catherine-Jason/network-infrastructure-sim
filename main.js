@@ -43,10 +43,10 @@ async function init() {
     initHintEngine();
 
     // Load scenario list
-    await loadScenarioList();
+    //await loadScenarioList();
 
     // Auto-load practice mode (scenario 0)
-    await loadScenario("scenario0_practice");
+    //await loadScenario("scenario0_practice");
 
     // Popup listener
     EventBus.on("popup", msg => {
