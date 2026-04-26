@@ -2,70 +2,172 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Network Simulator – Cisco Style</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Simulator – Test</title>
+    <style>
+        body { background: #0d1117; font-family: monospace; padding: 20px; color: #eee; }
+        canvas { background: #0d1117; border: 1px solid #1a2a3a; cursor: crosshair; }
+        #controls { margin: 10px 0; }
+        button { background: #1e3a5f; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+        #inspector, #terminal { background: #0a0f1a; border: 1px solid #1a2a3a; padding: 10px; margin-top: 10px; width: 300px; }
+        #terminal { display: none; }
+        #terminalOutput { height: 100px; overflow-y: auto; background: #00000033; padding: 5px; }
+    </style>
 </head>
 <body>
-<div id="app">
-    <div id="canvasContainer">
-        <canvas id="networkCanvas" width="1100" height="550"></canvas>
-    </div>
-    <div id="controlsPanel">
-        <button id="btnAddRouter">🔵 Router</button>
-        <button id="btnAddSwitch">🟢 Switch</button>
-        <button id="btnAddPC">💻 PC</button>
-        <button id="btnAddFirewall">🧱 Firewall</button>
-        <button id="btnAddServer">📀 Server</button>
-        <button id="btnAddCloud">☁️ Cloud</button>
-        <button id="btnAddAP">📶 Access Point</button>
-    </div>
-    <div id="inspectorPanel">
-        <h3>Inspector</h3>
-        <div id="inspectorContent">Select a device</div>
-    </div>
-    <div id="terminal">
-        <div id="terminalHeader">Terminal</div>
-        <div id="terminalOutput"></div>
-        <input type="text" id="terminalInput" placeholder="Enter command..." autocomplete="off">
-    </div>
-    <div id="levelPanel">
-        <div id="levelHeader">📡 Current Level: <span id="levelName"></span></div>
-        <div id="taskList"></div>
-        <button id="nextLevelBtn" style="display:none;">Next Level →</button>
-    </div>
-    <div id="levelSelectModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Select Level</h2>
-            <div id="levelButtons"></div>
-            <button id="closeModal">Close</button>
-        </div>
-    </div>
-    <div id="popup" class="hidden">Message</div>
+<canvas id="networkCanvas" width="900" height="500"></canvas>
+<div id="controls">
+    <button id="btnAddPC">➕ Add PC</button>
 </div>
-<button id="levelSelectButton" class="level-select-btn">📚 Level Select</button>
+<div id="inspector">Select a device</div>
+<div id="terminal">
+    <div id="terminalOutput"></div>
+    <input id="terminalInput" type="text" placeholder="Enter command..." autocomplete="off">
+</div>
 
-<!-- Load order: core first, then engine, then UI, then controllers, then main -->
-<script src="js/eventBus.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/state.js"></script>
-<script src="js/engine.js"></script>
-<script src="js/deviceModel.js"></script>
-<script src="js/pingEngine.js"></script>
-<script src="js/levelValidator.js"></script>
-<script src="js/progression.js"></script>
-<script src="js/levels.js"></script>
-<script src="js/canvasRenderer.js"></script>
-<script src="js/inspectorUI.js"></script>
-<script src="js/controlsUI.js"></script>
-<script src="js/terminalUI.js"></script>
-<script src="js/levelSelectUI.js"></script>
-<script src="js/popupUI.js"></script>
-<script src="js/controller.js"></script>
-<script src="js/dragController.js"></script>
-<script src="js/linkController.js"></script>
-<script src="js/clickController.js"></script>
-<script src="js/terminalController.js"></script>
-<script src="js/main.js"></script>
+<script>
+    // ------------------------------------------------------------------
+    // MINIMAL TEST VERSION – ONLY PC, DRAG, TERMINAL, ipconfig
+    // ------------------------------------------------------------------
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let devices = [
+        { id: 'pc1', type: 'pc', name: 'PC-Test', x: 300, y: 200, interfaces: [{ name: 'eth0', ip: '192.168.1.10', mask: '255.255.255.0' }] }
+    ];
+    let selectedDeviceId = null;
+
+    // Drawing
+    function drawPC(x, y, selected) {
+        ctx.fillStyle = '#2a2a3a';
+        ctx.fillRect(x-20, y-15, 40, 30);
+        ctx.strokeStyle = '#aaaaff';
+        ctx.strokeRect(x-20, y-15, 40, 30);
+        ctx.fillStyle = '#3a3a4a';
+        ctx.fillRect(x+5, y-5, 12, 20);
+        if (selected) {
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x-22, y-17, 44, 34);
+        }
+        ctx.fillStyle = '#ccccff';
+        ctx.font = '10px monospace';
+        ctx.fillText(devices.find(d=>d.id===selectedDeviceId)?.name || '', x-15, y-20);
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        devices.forEach(dev => {
+            drawPC(dev.x, dev.y, selectedDeviceId === dev.id);
+        });
+    }
+
+    // Drag to move
+    let draggingDevice = null;
+    let dragOffsetX, dragOffsetY;
+
+    function getMouseCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let x = (e.clientX - rect.left) * scaleX;
+        let y = (e.clientY - rect.top) * scaleY;
+        x = Math.min(Math.max(0, x), canvas.width);
+        y = Math.min(Math.max(0, y), canvas.height);
+        return { x, y };
+    }
+
+    function onMouseDown(e) {
+        const { x, y } = getMouseCoords(e);
+        for (let dev of devices) {
+            if (Math.hypot(x - dev.x, y - dev.y) < 25) {
+                draggingDevice = dev;
+                dragOffsetX = dev.x - x;
+                dragOffsetY = dev.y - y;
+                selectedDeviceId = dev.id;
+                updateInspector();
+                updateTerminal();
+                render();
+                break;
+            }
+        }
+    }
+
+    function onMouseMove(e) {
+        if (!draggingDevice) return;
+        const { x, y } = getMouseCoords(e);
+        draggingDevice.x = x + dragOffsetX;
+        draggingDevice.y = y + dragOffsetY;
+        render();
+    }
+
+    function onMouseUp() { draggingDevice = null; }
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    // Inspector
+    function updateInspector() {
+        const dev = devices.find(d => d.id === selectedDeviceId);
+        if (!dev) { document.getElementById('inspector').innerHTML = 'Select a device'; return; }
+        let html = `<strong>${dev.name}</strong> (${dev.type})<br>Interfaces:<ul>`;
+        dev.interfaces.forEach(iface => { html += `<li>${iface.name}: ${iface.ip || 'unset'}</li>`; });
+        html += `</ul>`;
+        document.getElementById('inspector').innerHTML = html;
+    }
+
+    // Terminal
+    const terminalDiv = document.getElementById('terminal');
+    const terminalOutput = document.getElementById('terminalOutput');
+    const terminalInput = document.getElementById('terminalInput');
+
+    function updateTerminal() {
+        if (selectedDeviceId) {
+            terminalDiv.style.display = 'block';
+            terminalOutput.innerHTML = `Connected to ${devices.find(d=>d.id===selectedDeviceId)?.name}\n> `;
+            terminalInput.value = '';
+            terminalInput.focus();
+        } else {
+            terminalDiv.style.display = 'none';
+        }
+    }
+
+    function executeCommand(cmd) {
+        if (!selectedDeviceId) return;
+        const dev = devices.find(d => d.id === selectedDeviceId);
+        let response = '';
+        if (cmd === 'ipconfig') {
+            response = dev.interfaces.map(i => `${i.name}: ${i.ip || 'unset'}`).join('\n');
+        } else {
+            response = 'Command not recognized';
+        }
+        terminalOutput.innerHTML += `<br>> ${cmd}<br>${response}<br>> `;
+        terminalInput.value = '';
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    }
+
+    terminalInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') executeCommand(terminalInput.value.trim());
+    });
+
+    // Add PC button
+    document.getElementById('btnAddPC').onclick = () => {
+        const newId = 'pc' + (devices.length + 1);
+        devices.push({
+            id: newId,
+            type: 'pc',
+            name: `PC-${devices.length+1}`,
+            x: Math.random() * (canvas.width - 100) + 50,
+            y: Math.random() * (canvas.height - 100) + 50,
+            interfaces: [{ name: 'eth0', ip: '', mask: '' }]
+        });
+        render();
+    };
+
+    render();
+    updateInspector();
+    console.log('Test version loaded – click the PC, then type ipconfig');
+</script>
 </body>
 </html>
