@@ -1,18 +1,387 @@
 <!DOCTYPE html>
-<html>
+2
+<html lang="en">
+3
 <head>
-    <title>Canvas Test</title>
+4
+<meta charset="UTF-8">
+5
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+6
+<title>Network Infrastructure Simulator</title>
+7
+ 
+8
+<style>
+9
+:root{
+10
+--bg:#0f172a;
+11
+--card:#1e293b;
+12
+--primary:#3b82f6;
+13
+--text:#e2e8f0;
+14
+--muted:#94a3b8;
+15
+}
+16
+ 
+17
+*{
+18
+margin:0;
+19
+padding:0;
+20
+box-sizing:border-box;
+21
+}
+22
+ 
+23
+body{
+24
+font-family:"Segoe UI",sans-serif;
+25
+background:linear-gradient(135deg,#0f172a,#1e293b);
+26
+color:var(--text);
+27
+min-height:100vh;
+28
+}
+29
+ 
+30
+.container{
+31
+max-width:1200px;
+32
+margin:auto;
+33
+padding:60px 20px;
+34
+}
+35
+ 
+36
+.hero{
+37
+text-align:center;
+38
+margin-bottom:50px;
+39
+}
+40
+ 
+41
+h1{
+42
+font-size:3rem;
+43
+margin-bottom:15px;
+44
+}
+45
+ 
+46
+.subtitle{
+47
+font-size:1.2rem;
+48
+color:var(--muted);
+49
+max-width:700px;
+50
+margin:auto;
+51
+}
+52
+ 
+53
+.card{
+54
+background:var(--card);
+55
+border-radius:18px;
+56
+padding:30px;
+57
+margin-top:30px;
+58
+box-shadow:0 8px 24px rgba(0,0,0,.3);
+59
+}
+60
+ 
+61
+.features{
+62
+display:grid;
+63
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+64
+gap:20px;
+65
+margin-top:25px;
+66
+}
+67
+ 
+68
+.feature{
+69
+background:#0f172a;
+70
+padding:20px;
+71
+border-radius:12px;
+72
+border:1px solid rgba(255,255,255,.08);
+73
+}
+74
+ 
+75
+.feature h3{
+76
+color:#60a5fa;
+77
+margin-bottom:10px;
+78
+}
+79
+ 
+80
+.buttons{
+81
+text-align:center;
+82
+margin-top:40px;
+83
+}
+84
+ 
+85
+.btn{
+86
+display:inline-block;
+87
+text-decoration:none;
+88
+background:var(--primary);
+89
+color:white;
+90
+padding:14px 28px;
+91
+border-radius:10px;
+92
+font-weight:600;
+93
+margin:10px;
+94
+}
+95
+ 
+96
+.btn:hover{
+97
+background:#2563eb;
+98
+}
+99
+ 
+100
+.badges{
+101
+text-align:center;
+102
+margin-top:20px;
+103
+}
+104
+ 
+105
+.badge{
+106
+display:inline-block;
+107
+padding:8px 14px;
+108
+border-radius:20px;
+109
+background:#334155;
+110
+margin:5px;
+111
+font-size:.9rem;
+112
+}
+113
+ 
+114
+footer{
+115
+text-align:center;
+116
+margin-top:60px;
+117
+color:var(--muted);
+118
+}
+119
+</style>
+120
 </head>
+121
+ 
+122
 <body>
-    <canvas id="testCanvas" width="800" height="400" style="border:1px solid white;"></canvas>
-    <script>
-        const canvas = document.getElementById('testCanvas');
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#1e3a5f';
-        ctx.fillRect(100, 100, 50, 50);
-        ctx.fillStyle = 'white';
-        ctx.fillText('If you see a blue square, canvas works', 100, 180);
-        console.log('Test script ran');
-    </script>
+123
+ 
+124
+<div class="container">
+125
+ 
+126
+<div class="hero">
+127
+<h1>🌐 Network Infrastructure Simulator</h1>
+128
+ 
+129
+<p class="subtitle">
+130
+A browser-based networking simulator built with HTML, CSS, and JavaScript.
+131
+Practice network topology design, device connectivity, and troubleshooting
+132
+concepts through an interactive learning environment.
+133
+</p>
+134
+</div>
+135
+ 
+136
+<div class="card">
+137
+<h2>Project Overview</h2>
+138
+ 
+139
+<p style="margin-top:15px;">
+140
+This project was developed as part of my cybersecurity and networking portfolio.
+141
+Users can create network layouts, connect devices, explore networking concepts,
+142
+and complete guided learning exercises.
+143
+</p>
+144
+ 
+145
+<div class="features">
+146
+ 
+147
+<div class="feature">
+148
+<h3>🖥 Device Simulation</h3>
+149
+<p>Create PCs, switches, routers, and cloud devices.</p>
+150
+</div>
+151
+ 
+152
+<div class="feature">
+153
+<h3>🔌 Connectivity</h3>
+154
+<p>Build simple network topologies and visual connections.</p>
+155
+</div>
+156
+ 
+157
+<div class="feature">
+158
+<h3>💻 Terminal Commands</h3>
+159
+<p>Simulate networking commands and troubleshooting workflows.</p>
+160
+</div>
+161
+ 
+162
+<div class="feature">
+163
+<h3>📚 Learning Labs</h3>
+164
+<p>Complete structured networking challenges and exercises.</p>
+165
+</div>
+166
+ 
+167
+</div>
+168
+ 
+169
+<div class="badges">
+170
+<span class="badge">HTML5</span>
+171
+<span class="badge">CSS3</span>
+172
+<span class="badge">JavaScript</span>
+173
+<span class="badge">Networking</span>
+174
+<span class="badge">Cybersecurity</span>
+175
+<span class="badge">Canvas API</span>
+176
+</div>
+177
+ 
+178
+<div class="buttons">
+179
+simulator.htmlbtn">Launch Simulator</a>
+180
+.com" class="btn">
+181
+Back to Portfolio
+182
+</a>
+183
+</div>
+184
+ 
+185
+</div>
+186
+ 
+187
+<footer>
+188
+Developed by Catherine Jason • Cybersecurity & IT Portfolio
+189
+</footer>
+190
+ 
+191
+</div>
+192
+ 
+193
 </body>
+194
 </html>
