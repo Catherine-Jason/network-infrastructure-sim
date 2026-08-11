@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4ff;
+}
+
+header {
+    background: linear-gradient(135deg, #7A4FFF, #4F8BFF);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.subtitle {
+    margin-top: 5px;
+    opacity: 0.9;
+}
+
+#toolbar {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.device-btn, #connectModeBtn, #clearBtn {
+    padding: 10px 15px;
+    border: none;
+    background: #7A4FFF;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.device-btn:hover, #connectModeBtn:hover, #clearBtn:hover {
+    background: #5f3bd9;
+}
+
+#canvas {
+    width: 100%;
+    height: calc(100vh - 160px);
+    background: #e9e9ff;
+    position: relative;
+    overflow: hidden;
+}
+
+.device {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    font-size: 30px;
+}
+
+.cable {
+    position: absolute;
+    background: #4F8BFF;
+    height: 4px;
+    transform-origin: 0 0;
+}
