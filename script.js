@@ -5,7 +5,7 @@
 // - Visual connect-mode toggle, prevent self-connect
 // - Persistence: save/load to localStorage, export/import JSON
 // - NEW: Device configuration panels, cheat bubble, VLAN/routing, ping simulation,
-//        port labels, status coloring, troubleshooting hints
+//        port labels, status coloring, troubleshooting hints, switch port UI
 
 const canvas = document.getElementById("canvas");
 const connectModeBtn = document.getElementById("connectModeBtn");
@@ -567,6 +567,7 @@ function showDevicePanel(device) {
         <label>VLAN: <input id="devVLAN" type="number" min="1" value="${device.vlan || ''}"></label>
         <label>Gateway: <input id="devGW" type="text" value="${device.gateway}"></label>
         <div id="routerInterfaces"></div>
+        <div id="switchPorts"></div>
         <div class="panel-actions">
             <button id="applyDev">Apply</button>
             <button id="pingFrom">Ping...</button>
@@ -583,6 +584,7 @@ function showDevicePanel(device) {
     const vlanInput = panel.querySelector('#devVLAN');
     const gwInput = panel.querySelector('#devGW');
     const ifaceDiv = panel.querySelector('#routerInterfaces');
+    const switchDiv = panel.querySelector('#switchPorts');
     const applyBtn = panel.querySelector('#applyDev');
     const pingBtn = panel.querySelector('#pingFrom');
     const closeBtn = panel.querySelector('#closePanel');
@@ -600,6 +602,50 @@ function showDevicePanel(device) {
             `;
             ifaceDiv.appendChild(row);
         });
+    }
+
+    // switch ports editor
+    if (device.type === 'switch') {
+        switchDiv.innerHTML = '<h4>Switch Ports</h4>';
+        const portsList = document.createElement('div');
+        portsList.id = 'portsList';
+        switchDiv.appendChild(portsList);
+
+        function renderPorts() {
+            portsList.innerHTML = '';
+            const entries = Object.entries(device.switchPorts || {});
+            if (entries.length === 0) {
+                portsList.innerHTML = '<div style="font-size:13px;color:#666">No ports yet. Create connections to auto-add ports, or use Add Port.</div>';
+            }
+            entries.forEach(([label, info]) => {
+                const row = document.createElement('div');
+                row.className = 'iface-row';
+                row.innerHTML = `
+                    <div style="flex:1">${label}</div>
+                    <select data-port="${label}" class="port-type">
+                        <option value="access">Access</option>
+                        <option value="trunk">Trunk</option>
+                    </select>
+                    <input data-port-vlan="${label}" class="port-vlan" type="number" min="1" value="${info.vlan || ''}" style="width:70px">
+                `;
+                portsList.appendChild(row);
+                const sel = row.querySelector('.port-type');
+                const vlanInp = row.querySelector('.port-vlan');
+                sel.value = info.type || 'access';
+                vlanInp.value = info.vlan || '';
+            });
+        }
+
+        const addBtn = document.createElement('button');
+        addBtn.textContent = 'Add Port';
+        addBtn.addEventListener('click', () => {
+            const lbl = device.nextPortLabel();
+            renderPorts();
+        });
+        switchDiv.appendChild(addBtn);
+        renderPorts();
+
+        // when applying, we'll read values back
     }
 
     function renderHints() {
@@ -631,6 +677,34 @@ function showDevicePanel(device) {
                 device.interfaces[idx].up = inp.checked;
             });
         }
+
+        if (device.type === 'switch') {
+            // read back port settings
+            const portTypeEls = panel.querySelectorAll('.port-type');
+            portTypeEls.forEach(sel => {
+                const lbl = sel.dataset.port;
+                const tp = sel.value;
+                const vlanEl = panel.querySelector(`[data-port-vlan="${lbl}"]`);
+                const vlanVal = vlanEl && vlanEl.value ? parseInt(vlanEl.value,10) : undefined;
+                if (!device.switchPorts[lbl]) device.switchPorts[lbl] = { type: tp, vlan: vlanVal };
+                else { device.switchPorts[lbl].type = tp; if (typeof vlanVal !== 'undefined') device.switchPorts[lbl].vlan = vlanVal; }
+
+                // update any connected connection port metadata
+                for (const connId of device.connections) {
+                    const conn = connections.get(connId);
+                    if (!conn) continue;
+                    if (conn.devA === device && conn.portA && conn.portA.label === lbl) {
+                        conn.portA.trunk = (tp === 'trunk');
+                        if (typeof vlanVal !== 'undefined') conn.portA.vlan = vlanVal;
+                    }
+                    if (conn.devB === device && conn.portB && conn.portB.label === lbl) {
+                        conn.portB.trunk = (tp === 'trunk');
+                        if (typeof vlanVal !== 'undefined') conn.portB.vlan = vlanVal;
+                    }
+                }
+            });
+        }
+
         device._renderLabel();
         scheduleAutosave();
         evaluateNetworkStatus();
@@ -685,11 +759,12 @@ function ipInSameSubnet(a, b) {
 function simulatePing(srcDevice, targetIP) {
     // find device with targetIP
     let dest = null;
+    let destIfaceIP = false;
     for (const d of devices.values()) {
         if (d.ip === targetIP) { dest = d; break; }
         // router interface check
         if (d.type === 'router') {
-            for (const iface of d.interfaces) if (iface.ip === targetIP) { dest = d; break; }
+            for (const iface of d.interfaces) if (iface.ip === targetIP) { dest = d; destIfaceIP = true; break; }
             if (dest) break;
         }
     }
