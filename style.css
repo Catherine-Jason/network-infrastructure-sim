@@ -18,14 +18,15 @@ header {
 
 #toolbar {
     display: flex;
-    gap: 15px;
-    padding: 15px;
+    gap: 12px;
+    padding: 12px;
     background: #ffffff;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    align-items: center;
 }
 
-.device-btn, #connectModeBtn, #clearBtn {
-    padding: 10px 15px;
+.device-btn, #connectModeBtn, #clearBtn, #saveBtn, #loadBtn, #exportBtn, #importBtn {
+    padding: 8px 12px;
     border: none;
     background: #7A4FFF;
     color: white;
@@ -37,8 +38,12 @@ header {
     gap: 8px;
 }
 
-.device-btn:hover, #connectModeBtn:hover, #clearBtn:hover {
+.device-btn:hover, #connectModeBtn:hover, #clearBtn:hover, #saveBtn:hover, #loadBtn:hover, #exportBtn:hover, #importBtn:hover {
     background: #5f3bd9;
+}
+
+#connectModeBtn.active {
+    background: #2b6cff;
 }
 
 #canvas {
@@ -61,6 +66,37 @@ header {
     justify-content: center;
     cursor: grab;
     font-size: 30px;
+    user-select: none;
+    touch-action: none;
+    z-index: 10; /* above SVG lines */
+}
+
+.device.selected {
+    outline: 4px solid rgba(43,108,255,0.25);
+    box-shadow: 0 6px 14px rgba(43,108,255,0.15);
+}
+
+/* SVG overlay for cables */
+#canvas svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* let clicks pass to devices unless line explicitly enables pointer-events */
+    z-index: 0;
+}
+
+svg line {
+    stroke-linecap: round;
+}
+
+svg text {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    fill: #10305a;
+    user-select: none;
+    pointer-events: none;
 }
 
 .cable {
