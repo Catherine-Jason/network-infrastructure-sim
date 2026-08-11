@@ -4,8 +4,7 @@
 // - Device / Connection classes with data model
 // - Visual connect-mode toggle, prevent self-connect
 // - Persistence: save/load to localStorage, export/import JSON
-// - NEW: Device configuration panels, cheat bubble, VLAN/routing, ping simulation,
-//        port labels, status coloring, troubleshooting hints, switch port UI
+// - NEW: Routing table UI, auto-advance cheat bubble, sample demo topology
 
 const canvas = document.getElementById("canvas");
 const connectModeBtn = document.getElementById("connectModeBtn");
@@ -15,6 +14,19 @@ const loadBtn = document.getElementById("loadBtn");
 const exportBtn = document.getElementById("exportBtn");
 const importBtn = document.getElementById("importBtn");
 const fileInput = document.getElementById("fileInput");
+
+// Optional demo button: create if toolbar exists
+const demoBtn = document.getElementById('demoBtn');
+if (!demoBtn) {
+    const tb = document.getElementById('toolbar');
+    if (tb) {
+        const b = document.createElement('button');
+        b.id = 'demoBtn';
+        b.innerHTML = '<i class="fa-solid fa-play"></i> Demo';
+        b.addEventListener('click', () => createDemoTopology());
+        tb.appendChild(b);
+    }
+}
 
 // Create an SVG overlay for cables
 const svgNS = "http://www.w3.org/2000/svg";
@@ -47,6 +59,7 @@ connectModeBtn.addEventListener("click", () => {
     firstDevice = null;
     connectModeBtn.classList.toggle("active", connectMode);
     connectModeBtn.textContent = connectMode ? "Cable Mode: ON" : "Cable Mode: OFF";
+    autoAdvanceCheat();
 });
 
 // Clear canvas (devices + connections)
@@ -61,10 +74,11 @@ clearBtn.addEventListener("click", () => {
     connections.clear();
 
     scheduleAutosave();
+    autoAdvanceCheat();
 });
 
 // Save / Load
-const STORAGE_KEY = "nis-layout-v2";
+const STORAGE_KEY = "nis-layout-v3";
 
 saveBtn.addEventListener("click", () => saveLayout());
 loadBtn.addEventListener("click", () => loadLayout());
@@ -133,8 +147,51 @@ function createCheatBubble() {
     });
 
     if (localStorage.getItem('nis-cheat-closed')) bubble.style.display = 'none';
+    return bubble;
 }
-createCheatBubble();
+const cheatBubble = createCheatBubble();
+
+function updateCheatBubble() {
+    const stepText = cheatBubble.querySelector('#cheatStepText');
+    stepText.textContent = `Step ${cheatIndex + 1}: ${STEPS[cheatIndex] || 'Done'}`;
+}
+
+// decide progress automatically and update cheatIndex (auto-advance)
+function autoAdvanceCheat() {
+    // Determine step completion flags
+    const hasDevices = devices.size > 0;
+    const namedDevices = Array.from(devices.values()).some(d => {
+        // consider renamed if name does NOT equal default generated name
+        return d.name && !d.name.startsWith(`${d.type}-`);
+    });
+    const ipsAssigned = Array.from(devices.values()).some(d => (d.type === 'pc' && d.ip) || (d.type === 'router' && d.interfaces.some(i=>i.ip)));
+    const vlansConfigured = Array.from(devices.values()).some(d => typeof d.vlan !== 'undefined' && d.vlan !== null);
+    const portsLabeled = connections.size > 0;
+    const connectivityVerified = Array.from(devices.values()).some(d => d.el.classList.contains('status-green'));
+    const pingSuccess = localStorage.getItem('nis-last-ping-ok') === '1';
+
+    let target = 0;
+    if (hasDevices) target = 0; else target = 0;
+    if (hasDevices) target = 0;
+    if (namedDevices) target = Math.max(target,1);
+    if (ipsAssigned) target = Math.max(target,2);
+    if (vlansConfigured) target = Math.max(target,3);
+    if (portsLabeled) target = Math.max(target,4);
+    if (connectivityVerified) target = Math.max(target,5);
+    if (pingSuccess) target = Math.max(target,6);
+    // step 7 troubleshooting considered final
+
+    if (target > cheatIndex) {
+        cheatIndex = target;
+        localStorage.setItem('nis-cheat-step', String(cheatIndex));
+        updateCheatBubble();
+        // open bubble if closed
+        if (localStorage.getItem('nis-cheat-closed')) {
+            localStorage.removeItem('nis-cheat-closed');
+            cheatBubble.style.display = '';
+        }
+    }
+}
 
 // Device class to handle drag/positioning/connection bookkeeping and config
 class Device {
@@ -155,6 +212,7 @@ class Device {
         this.vlan = (type === 'switch') ? 1 : null; // switches default VLAN 1
         this.gateway = ""; // for PCs
         this.portCounter = 0; // for auto-increment port numbering (fa0/1...)
+        this.routes = []; // router static routes [{network: '10.0.0.0/24', nextHop: '192.168.1.1'}]
 
         // router-specific
         this.interfaces = []; // [{name: 'G0/0', ip: '192.168.1.1', up: true}]
@@ -230,6 +288,7 @@ class Device {
             scheduleAutosave();
             // status update when moved
             evaluateNetworkStatus();
+            autoAdvanceCheat();
         };
 
         this.el.addEventListener("pointermove", onMove);
@@ -260,6 +319,7 @@ class Device {
             if (conn) {
                 connections.set(conn.id, conn);
                 scheduleAutosave();
+                autoAdvanceCheat();
             } else {
                 alert('Connection failed (duplicate or self-connect)');
             }
@@ -287,6 +347,7 @@ class Device {
         // autosave
         scheduleAutosave();
         evaluateNetworkStatus();
+        autoAdvanceCheat();
     }
 
     center() {
@@ -403,6 +464,7 @@ class Connection {
         // autosave
         scheduleAutosave();
         evaluateNetworkStatus();
+        autoAdvanceCheat();
     }
 }
 
@@ -420,6 +482,7 @@ function createConnection(a, b, label = "") {
     if (connectionExists(a, b)) return null; // avoid duplicate
     const conn = new Connection(a, b, label);
     connections.set(conn.id, conn);
+    autoAdvanceCheat();
     return conn;
 }
 
@@ -431,7 +494,7 @@ function saveLayout() {
     };
 
     devices.forEach(dev => {
-        data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} });
+        data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], routes: dev.routes || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} });
     });
 
     connections.forEach(conn => {
@@ -467,7 +530,7 @@ function exportLayout() {
     };
 
     devices.forEach(dev => {
-        data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} });
+        data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], routes: dev.routes || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} });
     });
 
     connections.forEach(conn => {
@@ -508,6 +571,7 @@ function loadLayoutFromData(data) {
         device.vlan = (typeof d.vlan !== 'undefined') ? d.vlan : device.vlan;
         device.gateway = d.gateway || '';
         device.interfaces = d.interfaces || device.interfaces;
+        device.routes = d.routes || device.routes || [];
         device.portCounter = d.portCounter || device.portCounter || 0;
         device.switchPorts = d.switchPorts || device.switchPorts || {};
         device._renderLabel();
@@ -534,6 +598,7 @@ function loadLayoutFromData(data) {
     // autosave
     scheduleAutosave();
     evaluateNetworkStatus();
+    autoAdvanceCheat();
 }
 
 // Autosave scheduler (throttle frequent writes)
@@ -543,7 +608,7 @@ function scheduleAutosave() {
     autosaveTimer = setTimeout(() => {
         try {
             const data = { devices: [], connections: [] };
-            devices.forEach(dev => data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} }));
+            devices.forEach(dev => data.devices.push({ id: dev.id, type: dev.type, x: dev.x, y: dev.y, name: dev.name, ip: dev.ip, vlan: dev.vlan, gateway: dev.gateway, interfaces: dev.interfaces || [], routes: dev.routes || [], portCounter: dev.portCounter, switchPorts: dev.switchPorts || {} }));
             connections.forEach(conn => data.connections.push({ id: conn.id, a: conn.devA.id, b: conn.devB.id, label: conn.label, portA: conn.portA, portB: conn.portB }));
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         } catch (err) {
@@ -567,6 +632,7 @@ function showDevicePanel(device) {
         <label>VLAN: <input id="devVLAN" type="number" min="1" value="${device.vlan || ''}"></label>
         <label>Gateway: <input id="devGW" type="text" value="${device.gateway}"></label>
         <div id="routerInterfaces"></div>
+        <div id="routeTable"></div>
         <div id="switchPorts"></div>
         <div class="panel-actions">
             <button id="applyDev">Apply</button>
@@ -584,6 +650,7 @@ function showDevicePanel(device) {
     const vlanInput = panel.querySelector('#devVLAN');
     const gwInput = panel.querySelector('#devGW');
     const ifaceDiv = panel.querySelector('#routerInterfaces');
+    const routeDiv = panel.querySelector('#routeTable');
     const switchDiv = panel.querySelector('#switchPorts');
     const applyBtn = panel.querySelector('#applyDev');
     const pingBtn = panel.querySelector('#pingFrom');
@@ -602,6 +669,54 @@ function showDevicePanel(device) {
             `;
             ifaceDiv.appendChild(row);
         });
+
+        // routing table editor
+        routeDiv.innerHTML = '<h4>Routing Table</h4>';
+        const routesList = document.createElement('div');
+        routesList.id = 'routesList';
+        routeDiv.appendChild(routesList);
+
+        function renderRoutes() {
+            routesList.innerHTML = '';
+            (device.routes || []).forEach((rt, i) => {
+                const row = document.createElement('div');
+                row.className = 'iface-row';
+                row.innerHTML = `
+                    <div style="flex:1">${rt.network} -> ${rt.nextHop}</div>
+                    <button data-idx="${i}" class="rm-route">Remove</button>
+                `;
+                routesList.appendChild(row);
+            });
+            const addRow = document.createElement('div');
+            addRow.className = 'iface-row';
+            addRow.innerHTML = `
+                <input id="newRouteNet" placeholder="network (e.g. 10.0.0.0/24)" style="flex:1">
+                <input id="newRouteNext" placeholder="next hop IP" style="width:120px">
+                <button id="addRoute">Add</button>
+            `;
+            routesList.appendChild(addRow);
+
+            routesList.querySelectorAll('.rm-route').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.dataset.idx,10);
+                    device.routes.splice(idx,1);
+                    renderRoutes();
+                });
+            });
+
+            const addBtn = routesList.querySelector('#addRoute');
+            addBtn.addEventListener('click', () => {
+                const net = routesList.querySelector('#newRouteNet').value.trim();
+                const nh = routesList.querySelector('#newRouteNext').value.trim();
+                if (net && nh) {
+                    device.routes.push({ network: net, nextHop: nh });
+                    routesList.querySelector('#newRouteNet').value = '';
+                    routesList.querySelector('#newRouteNext').value = '';
+                    renderRoutes();
+                }
+            });
+        }
+        renderRoutes();
     }
 
     // switch ports editor
@@ -705,11 +820,17 @@ function showDevicePanel(device) {
             });
         }
 
+        // Save router routes if present
+        if (device.type === 'router') {
+            // routes are updated live in the UI so device.routes is current
+        }
+
         device._renderLabel();
         scheduleAutosave();
         evaluateNetworkStatus();
         renderHints();
         panel.querySelector('#panelDevName').textContent = device.name;
+        autoAdvanceCheat();
     });
 
     pingBtn.addEventListener('click', () => {
@@ -717,6 +838,9 @@ function showDevicePanel(device) {
         if (!target) return;
         const res = simulatePing(device, target.trim());
         alert(res.message);
+        if (res.ok) localStorage.setItem('nis-last-ping-ok','1');
+        else localStorage.removeItem('nis-last-ping-ok');
+        autoAdvanceCheat();
     });
 
     closeBtn.addEventListener('click', () => {
@@ -815,15 +939,30 @@ function simulatePing(srcDevice, targetIP) {
         const srcNet = ipToNetwork(srcDevice.ip);
         const dstNet = ipToNetwork(targetIP);
         if (srcNet && dstNet && srcNet !== dstNet) {
-            // see if there is a router that has up interfaces in both nets and is reachable from src and dest
+            // see if there is a router that has up interfaces in both nets and is reachable from src and dest OR has static route
             for (const r of devices.values()) {
                 if (r.type !== 'router') continue;
                 const hasIfSrcNet = r.interfaces.some(i => i.up && ipToNetwork(i.ip) === srcNet);
                 const hasIfDstNet = r.interfaces.some(i => i.up && ipToNetwork(i.ip) === dstNet);
-                if (!hasIfSrcNet || !hasIfDstNet) continue;
-                // check reachability from src to router and dest to router (ignoring VLAN differences for this basic check)
-                if (isReachableIgnoringSubnet(srcDevice, r) && isReachableIgnoringSubnet(dest, r)) {
-                    return { ok: true, message: `Ping successful (routed via ${r.name}).` };
+                if ((hasIfSrcNet && hasIfDstNet) && isReachableIgnoringSubnet(srcDevice, r) && isReachableIgnoringSubnet(dest, r)) {
+                    return { ok: true, message: `Ping successful (routed via ${r.name} connected interfaces).` };
+                }
+                // static route check: does router have a route for dstNet? If so, check reachability to nextHop
+                const rt = (r.routes || []).find(rr => rr.network === dstNet);
+                if (rt && isReachableIgnoringSubnet(srcDevice, r)) {
+                    // check nextHop reachability
+                    // find device/interface with nextHop IP
+                    let nhDev = null;
+                    for (const d of devices.values()) {
+                        if (d.ip === rt.nextHop) { nhDev = d; break; }
+                        if (d.type === 'router') {
+                            for (const iface of d.interfaces) if (iface.ip === rt.nextHop) { nhDev = d; break; }
+                            if (nhDev) break;
+                        }
+                    }
+                    if (nhDev && isReachableIgnoringSubnet(r, nhDev) && isReachableIgnoringSubnet(nhDev, dest)) {
+                        return { ok: true, message: `Ping successful (routed via ${r.name} using static route).` };
+                    }
                 }
             }
         }
@@ -934,6 +1073,7 @@ function evaluateNetworkStatus() {
             else d.el.classList.add('status-green');
         }
     }
+    autoAdvanceCheat();
 }
 
 // Helpers for UI and startup
@@ -947,7 +1087,52 @@ function spawnDevice(type) {
     // auto-save
     scheduleAutosave();
     evaluateNetworkStatus();
+    autoAdvanceCheat();
     return device;
+}
+
+// Demo topology generator (sample config)
+function createDemoTopology() {
+    // Clear first
+    devices.forEach(d => d.destroy()); devices.clear();
+    connections.forEach(c => c.destroy()); connections.clear();
+
+    // Create a router with two interfaces
+    const rEl = createDeviceElement('router');
+    const router = new Device(rEl, 200, 100, 'router');
+    router.name = 'R1';
+    router.interfaces[0].ip = '192.168.1.1';
+    router.interfaces[1].ip = '10.0.0.1';
+    router.interfaces[0].up = true; router.interfaces[1].up = true;
+    devices.set(router.id, router);
+
+    // Create switch and PCs in 192.168.1.0/24
+    const sEl = createDeviceElement('switch');
+    const sw = new Device(sEl, 200, 260, 'switch'); sw.name = 'SW1'; sw.vlan = 10; devices.set(sw.id, sw);
+    const pc1 = spawnDevice('pc'); pc1.x = 80; pc1.y = 260; pc1.name = 'PC-A'; pc1.ip = '192.168.1.10'; pc1.vlan = 10; devices.set(pc1.id, pc1);
+    const pc2 = spawnDevice('pc'); pc2.x = 320; pc2.y = 260; pc2.name = 'PC-B'; pc2.ip = '192.168.1.11'; pc2.vlan = 10; devices.set(pc2.id, pc2);
+
+    // Create another switch and PC in 10.0.0.0/24
+    const sEl2 = createDeviceElement('switch');
+    const sw2 = new Device(sEl2, 520, 100, 'switch'); sw2.name = 'SW2'; sw2.vlan = 20; devices.set(sw2.id, sw2);
+    const pc3 = spawnDevice('pc'); pc3.x = 520; pc3.y = 260; pc3.name = 'PC-C'; pc3.ip = '10.0.0.10'; pc3.vlan = 20; devices.set(pc3.id, pc3);
+
+    // Create connections
+    const c1 = createConnection(router, sw); const c2 = createConnection(sw, pc1); const c3 = createConnection(sw, pc2);
+    const c4 = createConnection(router, sw2); const c5 = createConnection(sw2, pc3);
+
+    // set appropriate port VLANs
+    // find connection objects and set vlan/trunk
+    [c1, c4].forEach(c => { c.portA.vlan = null; c.portA.trunk = true; c.portB.vlan = null; c.portB.trunk = true; });
+    // access ports
+    [c2,c3].forEach(c => { c.portA.vlan = 10; c.portA.trunk = false; c.portB.vlan = 10; c.portB.trunk = false; });
+    [c5].forEach(c => { c.portA.vlan = 20; c.portA.trunk = false; c.portB.vlan = 20; c.portB.trunk = false; });
+
+    // router static routes (not necessary here, router connected to both nets)
+
+    scheduleAutosave();
+    evaluateNetworkStatus();
+    autoAdvanceCheat();
 }
 
 // Load layout on startup if available
@@ -965,10 +1150,12 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     // initial status
     evaluateNetworkStatus();
+    autoAdvanceCheat();
 });
 
 // Expose a simple debug ping command from console:
 window.simulatePing = simulatePing;
 window.evaluateNetworkStatus = evaluateNetworkStatus;
+window.createDemoTopology = createDemoTopology;
 
 // End of script
