@@ -1,143 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Infrastructure Simulator</title>
+    <meta charset="UTF-8">
+    <title>Network Infrastructure Simulator</title>
 
-<style>
-:root{
-    --bg:#0f172a;
-    --card:#1e293b;
-    --primary:#3b82f6;
-    --text:#e2e8f0;
-    --muted:#94a3b8;
-}
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="style.css">
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-body{
-    font-family:"Segoe UI",sans-serif;
-    background:linear-gradient(135deg,#0f172a,#1e293b);
-    color:var(--text);
-    min-height:100vh;
-}
-
-.container{
-    max-width:1200px;
-    margin:auto;
-    padding:60px 20px;
-}
-
-.hero{
-    text-align:center;
-    margin-bottom:50px;
-}
-
-h1{
-    font-size:3rem;
-    margin-bottom:15px;
-}
-
-.subtitle{
-    font-size:1.2rem;
-    color:var(--muted);
-    max-width:700px;
-    margin:auto;
-}
-
-.card{
-    background:var(--card);
-    border-radius:18px;
-    padding:30px;
-    margin-top:30px;
-    box-shadow:0 8px 24px rgba(0,0,0,.3);
-}
-
-.features{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-    gap:20px;
-    margin-top:25px;
-}
-
-.feature{
-    background:#0f172a;
-    padding:20px;
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,.08);
-}
-
-.feature h3{
-    color:#60a5fa;
-    margin-bottom:10px;
-}
-
-.buttons{
-    text-align:center;
-    margin-top:40px;
-}
-
-.btn{
-    display:inline-block;
-    text-decoration:none;
-    background:var(--primary);
-    color:white;
-    padding:14px 28px;
-    border-radius:10px;
-    font-weight:600;
-    margin:10px;
-    transition:.3s;
-}
-
-.btn:hover{
-    background:#2563eb;
-    transform:translateY(-2px);
-}
-
-.badges{
-    text-align:center;
-    margin-top:20px;
-}
-
-.badge{
-    display:inline-block;
-    padding:8px 14px;
-    border-radius:20px;
-    background:#334155;
-    margin:5px;
-    font-size:.9rem;
-}
-
-footer{
-    text-align:center;
-    margin-top:60px;
-    color:var(--muted);
-}
-</style>
 </head>
-
 <body>
 
-<div class="container">
+    <header>
+        <h1>Network Infrastructure Simulator</h1>
+        <p class="subtitle">Design, connect, and troubleshoot interactive network topologies.</p>
+    </header>
 
-    <div class="hero">
-        <h1>🌐 Network Infrastructure Simulator</h1>
+    <div id="toolbar">
+        <button class="device-btn" data-type="router">
+            <i class="fa-solid fa-route"></i> Router
+        </button>
 
-        <p class="subtitle">
-            A browser-based networking simulator built with HTML, CSS, and JavaScript.
-            Practice network topology design, device connectivity, and troubleshooting concepts through an interactive learning environment.
-        </p>
+        <button class="device-btn" data-type="switch">
+            <i class="fa-solid fa-network-wired"></i> Switch
+        </button>
+
+        <button class="device-btn" data-type="pc">
+            <i class="fa-solid fa-desktop"></i> PC
+        </button>
+
+        <button id="connectModeBtn">
+            <i class="fa-solid fa-plug"></i> Cable Mode
+        </button>
+
+        <button id="clearBtn">
+            <i class="fa-solid fa-trash"></i> Clear All
+        </button>
     </div>
 
-    <div class="card">
+    <div id="canvas"></div>
 
-        <h2>Project Overview</h2>
-
-        <p style="margin-top:15px;">
-            This project was developed as part of my cybersecurity and networking portfolio.
-            Users can create network layouts
+    <script src="script.js"></script>
+</body>
+</html>
