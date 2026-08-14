@@ -7,7 +7,7 @@ body {
 
 /* Dark mode support */
 body.dark-mode {
-    background: #1a1a2e;
+    background: #E5E5E5;
     color: #e0e0e0;
 }
 
@@ -34,7 +34,7 @@ header {
 }
 
 body.dark-mode #toolbar {
-    background: #0f3460;
+    background: #3A3A3A;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
@@ -70,7 +70,7 @@ body.dark-mode #toolbar {
 }
 
 body.dark-mode #canvas {
-    background: #16213e;
+    background: #E5E5E5;
 }
 
 .device {
@@ -92,7 +92,7 @@ body.dark-mode #canvas {
 }
 
 body.dark-mode .device {
-    background: #0f3460;
+    background: #3A3A3A;
     color: #e0e0e0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
@@ -251,7 +251,7 @@ body.dark-mode .conn-label {
 }
 
 body.dark-mode #configPanel {
-    background: #0f3460;
+    background: #3A3A3A;
     color: #e0e0e0;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
@@ -295,7 +295,7 @@ body.dark-mode #configPanel label {
 
 body.dark-mode #configPanel input,
 body.dark-mode #configPanel select {
-    background: #1a1a2e;
+    background: #E5E5E5;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -318,7 +318,7 @@ body.dark-mode #configPanel select {
 
 /* CLI Terminal area */
 #cliOutput {
-    background: #0b1220;
+    background: #3A3A3A;
     color: #b9f;
     padding: 8px;
     height: 160px;
@@ -332,7 +332,7 @@ body.dark-mode #configPanel select {
 }
 
 body.dark-mode #cliOutput {
-    background: #0a0e27;
+    background: #3A3A3A;
     color: #9f9;
 }
 
@@ -350,7 +350,7 @@ body.dark-mode #cliOutput {
 }
 
 body.dark-mode #cliInput {
-    background: #1a1a2e;
+    background: #E5E5E5;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -371,7 +371,7 @@ body.dark-mode #cliInput {
 body.dark-mode #configPanel .port-row,
 body.dark-mode #configPanel .iface-row,
 body.dark-mode #configPanel .route-row {
-    background: #1a2844;
+    background: #E5E5E5;
 }
 
 #configPanel .port-row input,
@@ -393,7 +393,7 @@ body.dark-mode #configPanel .iface-row input,
 body.dark-mode #configPanel .iface-row select,
 body.dark-mode #configPanel .route-row input,
 body.dark-mode #configPanel .route-row select {
-    background: #0f3460;
+    background: #3A3A3A;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -416,7 +416,7 @@ body.dark-mode #configPanel .route-row select {
 }
 
 body.dark-mode #cheatBubble {
-    background: #2a2416;
+    background: #3A3A3A;
     color: #e0e0e0;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
@@ -455,7 +455,7 @@ body.dark-mode #cheatBubble > div:nth-child(2) {
 }
 
 body.dark-mode #cheatBubble pre {
-    background: #0a0e27;
+    background: #3A3A3A;
     color: #9f9;
 }
 
@@ -488,7 +488,7 @@ body.dark-mode #cheatBubble div.hint {
 }
 
 body.dark-mode #cheatBubble button {
-    background: #0f3460;
+    background: #3A3A3A;
     color: #e0e0e0;
     border-color: #444;
 }
@@ -498,7 +498,7 @@ body.dark-mode #cheatBubble button {
 }
 
 body.dark-mode #cheatBubble button:hover {
-    background: #1a2844;
+    background: #E5E5E5;
 }
 
 /* Scenario progress indicator */
@@ -554,7 +554,7 @@ body.dark-mode .scenario-progress {
 }
 
 body.dark-mode .autocomplete-popup {
-    background: #0f3460;
+    background: #3A3A3A;
     border-color: #444;
     box-shadow: 0 4px 8px rgba(0,0,0,0.4);
 }
@@ -573,7 +573,7 @@ body.dark-mode .autocomplete-popup {
 
 body.dark-mode .autocomplete-popup li:hover,
 body.dark-mode .autocomplete-popup li.active {
-    background: #1a2844;
+    background: #E5E5E5;
 }
 
 /* Modal dialogs */
@@ -601,7 +601,7 @@ body.dark-mode .autocomplete-popup li.active {
 }
 
 body.dark-mode .modal-box {
-    background: #0f3460;
+    background: #3A3A3A;
     color: #e0e0e0;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
@@ -642,7 +642,7 @@ body.dark-mode .modal-box label {
 
 body.dark-mode .modal-box input,
 body.dark-mode .modal-box select {
-    background: #1a1a2e;
+    background: #E5E5E5;
     color: #e0e0e0;
     border-color: #444;
 }
