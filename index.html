@@ -1,65 +1,802 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Network Infrastructure Simulator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Network Infrastructure Simulator</title>
+<meta name="description" content="Build a network, send packets through switches, routers and firewalls, and learn how each device works.">
+<meta name="theme-color" content="#03060b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* Layout: header, then palette | canvas | side panel; stacks on narrow screens */
+:root{
+  --bg:#03060b; --panel:#0a1019; --panel-2:#0d1520; --ink:#e3eefa; --muted:#8d9cb2; --line:#1a2638;
+  --accent:#00aaff; --accent-ink:#00101c; --accent-soft:#062339;
+  --good:#3ddc84; --good-soft:#0b2a1c; --warn:#ffb020; --warn-soft:#2b2008; --bad:#ff5a73; --bad-soft:#2c0c14;
+  --z-staff:#00aaff; --z-guest:#ffb020; --z-servers:#b18cff; --z-dmz:#ff7a59; --z-internet:#8d9cb2;
+  --grid:rgba(0,170,255,0.05);
+  --mono:"JetBrains Mono", Consolas, ui-monospace, monospace;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink); font-family:var(--sans); font-size:14.5px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:18px 36px;
+}
+button,select,input{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.wrap{max-width:1500px; margin:0 auto; display:flex; flex-direction:column; gap:14px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
 
-    <!-- Main stylesheet -->
-    <link rel="stylesheet" href="style.css">
+/* header */
+.top{position:relative; overflow:hidden; display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 18px}
+.top::after{content:""; position:absolute; left:0; right:0; bottom:0; height:2px; background:linear-gradient(90deg, transparent, var(--accent), transparent); background-size:40% 100%; background-repeat:no-repeat; animation:scan 4s linear infinite}
+@keyframes scan{from{background-position:-40% 0} to{background-position:140% 0}}
+.brand h1{font-family:var(--mono); font-size:20px; font-weight:800; margin:0}
+.brand h1 span{color:var(--accent)}
+.brand p{margin:2px 0 0; color:var(--muted); font-size:13px}
+.tools{display:flex; gap:8px; flex-wrap:wrap}
+.btn{border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:8px 12px; font-weight:600; font-size:13.5px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); box-shadow:0 0 16px -6px var(--accent)}
+.btn.danger{color:var(--bad); border-color:var(--bad)}
+.btn.small{padding:5px 9px; font-size:12.5px}
+.btn[disabled]{opacity:.45; cursor:default}
 
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+/* layout */
+.layout{display:grid; grid-template-columns:150px minmax(0,1fr) 380px; gap:14px; align-items:start}
+.layout > *{min-width:0}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px}
 
+/* palette */
+.palette{display:flex; flex-direction:column; gap:6px}
+.pal{display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:7px 9px; font-size:13px; font-weight:500}
+.pal:hover{border-color:var(--accent)}
+.pal i{width:18px; text-align:center; color:var(--accent)}
+
+/* board */
+.stage{display:flex; flex-direction:column; gap:8px}
+.boardwrap{background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; position:relative}
+#board{display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none}
+.board-bg{fill:#050a12}
+.wire{stroke:var(--accent); stroke-width:2.5; opacity:.75; stroke-dasharray:7 7; animation:flow 1.6s linear infinite}
+.wire.wifi{stroke:var(--warn); stroke-dasharray:3 7}
+.wire.sel{stroke:#fff; opacity:1; stroke-width:3.5}
+.wire.lit{stroke:var(--good); opacity:1; stroke-width:4}
+.wire.dead{stroke:var(--bad); opacity:1; stroke-width:4}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.hit{stroke:transparent; stroke-width:18; cursor:pointer}
+.node{cursor:grab}
+.node .body{fill:#0b1420; stroke:#22344a; stroke-width:1.5}
+.node.sel .body{stroke:var(--accent); stroke-width:2.5; filter:url(#glow)}
+.node.hot .body{stroke:var(--good); stroke-width:2.5}
+.node.blocked .body{stroke:var(--bad); stroke-width:2.5}
+.node .ico{font-family:"Font Awesome 6 Free"; font-weight:900; font-size:26px; fill:var(--accent); text-anchor:middle}
+.node .nm{font-family:var(--mono); font-size:15px; fill:var(--ink); text-anchor:middle; font-weight:700}
+.node .ip{font-family:var(--mono); font-size:13.5px; fill:var(--muted); text-anchor:middle}
+.handle{fill:var(--accent); stroke:#050a12; stroke-width:3; opacity:0; cursor:crosshair; transition:opacity .15s}
+.node:hover .handle, .node.sel .handle{opacity:1}
+.ghost{stroke:var(--accent); stroke-width:2.5; stroke-dasharray:4 6; pointer-events:none}
+.packet{fill:var(--good); filter:url(#glow)}
+.packet.bad{fill:var(--bad)}
+.zonetag{font-family:var(--mono); font-size:10px; text-anchor:middle; font-weight:700}
+.help{font-size:12.5px; color:var(--muted); margin:0; display:flex; flex-wrap:wrap; gap:4px 16px}
+.help b{color:var(--ink); font-weight:600}
+.legend{display:flex; flex-wrap:wrap; gap:6px 12px; font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+.legend span::before{content:""; display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; background:var(--c)}
+.banner{background:var(--accent-soft); border:1px solid var(--accent); border-radius:10px; padding:8px 12px; font-size:13px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+.toast{position:fixed; left:50%; bottom:max(20px, env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); background:var(--panel-2); border:1px solid var(--accent); border-radius:10px; padding:10px 16px; font-size:13.5px; z-index:20; max-width:min(520px, calc(100vw - 32px))}
+
+/* side */
+.side{display:flex; flex-direction:column; gap:10px}
+.tabs{display:grid; grid-template-columns:repeat(3,1fr); gap:4px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:4px}
+.tabs button{border:0; background:transparent; border-radius:8px; padding:8px 4px; font-family:var(--mono); font-size:12px; color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent); color:var(--accent-ink); font-weight:700}
+.dhead{display:flex; gap:12px; align-items:center}
+.dicon{width:44px; height:44px; border-radius:10px; background:var(--accent-soft); display:grid; place-items:center; color:var(--accent); font-size:20px; flex:none}
+.dhead input{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px 9px; font-family:var(--mono); font-weight:700; width:100%}
+.dhead .ty{font-size:12.5px; color:var(--muted)}
+.facts{display:flex; flex-direction:column; gap:10px; margin-top:12px}
+.fact b{display:block; font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:2px; font-weight:500}
+.fact p{margin:0; font-size:13.5px}
+.field{display:flex; flex-direction:column; gap:4px; margin-top:10px}
+.field label{font-size:12px; color:var(--muted); font-weight:600}
+select,.inp{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px 9px; width:100%}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.rules{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px; margin-top:6px}
+.rules th,.rules td{padding:5px 6px; border-bottom:1px solid var(--line); text-align:left}
+.rules th{color:var(--muted); font-weight:500; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase}
+.rules .allow{color:var(--good)} .rules .deny{color:var(--bad)}
+.rules .x{border:0; background:none; color:var(--muted); padding:0 4px}
+.rules .x:hover{color:var(--bad)}
+.implicit td{color:var(--muted); font-style:italic}
+.addrule{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px}
+.addrule select{font-size:12.5px; padding:6px}
+.muted{color:var(--muted)}
+p{margin:0}
+.stack{display:flex; flex-direction:column; gap:8px}
+
+/* traffic */
+.osi{display:flex; flex-direction:column-reverse; gap:3px; margin-top:4px}
+.osi div{font-family:var(--mono); font-size:11px; padding:4px 8px; border-radius:5px; background:var(--bg); border:1px solid var(--line); color:var(--muted); display:flex; justify-content:space-between}
+.osi div.on{background:var(--accent-soft); border-color:var(--accent); color:var(--ink)}
+.trace{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.trace li{display:grid; grid-template-columns:auto 1fr; gap:8px; font-size:13px; align-items:start}
+.chip{font-family:var(--mono); font-size:10.5px; padding:2px 6px; border-radius:5px; border:1px solid var(--line); color:var(--accent); white-space:nowrap; margin-top:1px}
+.chip.bad{color:var(--bad); border-color:var(--bad)} .chip.good{color:var(--good); border-color:var(--good)} .chip.warn{color:var(--warn); border-color:var(--warn)}
+.result{border-radius:10px; padding:10px 12px; border:1px solid; font-size:13.5px}
+.result b{display:block; font-family:var(--mono); margin-bottom:2px}
+.result.ok{background:var(--good-soft); border-color:var(--good)} .result.ok b{color:var(--good)}
+.result.no{background:var(--bad-soft); border-color:var(--bad)} .result.no b{color:var(--bad)}
+.presets{display:flex; flex-wrap:wrap; gap:6px}
+
+/* challenges */
+.ch{display:flex; flex-direction:column; gap:6px}
+.chbtn{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; text-align:left; width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:9px 11px}
+.chbtn:hover{border-color:var(--accent)}
+.chbtn.on{border-color:var(--accent); background:var(--accent-soft)}
+.chbtn .n{font-family:var(--mono); font-size:12px; color:var(--accent)}
+.chbtn .t{font-weight:600; font-size:13.5px}
+.chbtn .s{font-family:var(--mono); font-size:11px; color:var(--muted)}
+.chbtn .s.done{color:var(--good)}
+.obj{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px}
+.obj li{display:grid; grid-template-columns:20px 1fr; gap:8px; font-size:13.5px}
+.obj .m{font-family:var(--mono); font-weight:700; color:var(--muted)}
+.obj .m.ok{color:var(--good)} .obj .m.no{color:var(--bad)}
+.obj .why{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
+.progress{height:6px; background:var(--accent-soft); border-radius:99px; overflow:hidden}
+.progress i{display:block; height:100%; background:var(--accent)}
+
+footer{text-align:center; font-size:12.5px; color:var(--muted); display:flex; flex-direction:column; gap:4px; padding-top:6px}
+footer a{color:var(--accent)}
+
+@media (max-width:1180px){
+  .layout{grid-template-columns:140px minmax(0,1fr)}
+  .side{grid-column:1 / -1}
+}
+@media (max-width:720px){
+  .layout{grid-template-columns:1fr}
+  .palette{flex-direction:row; overflow-x:auto; padding-bottom:4px}
+  .pal{width:auto; flex:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .wire{animation:none} .top::after{animation:none}
+}
+</style>
 </head>
 <body>
-
-    <header>
-        <h1>Network Infrastructure Simulator</h1>
-        <p class="subtitle">Design, connect, and troubleshoot interactive network topologies.</p>
-    </header>
-
-    <div id="toolbar">
-        <button class="device-btn" data-type="router">
-            <i class="fa-solid fa-route"></i> Router
-        </button>
-
-        <button class="device-btn" data-type="switch">
-            <i class="fa-solid fa-network-wired"></i> Switch
-        </button>
-
-        <button class="device-btn" data-type="pc">
-            <i class="fa-solid fa-desktop"></i> PC
-        </button>
-
-        <button id="connectModeBtn">
-            <i class="fa-solid fa-plug"></i> Cable Mode
-        </button>
-
-        <button id="saveBtn">
-            <i class="fa-solid fa-save"></i> Save
-        </button>
-
-        <button id="loadBtn">
-            <i class="fa-solid fa-folder-open"></i> Load
-        </button>
-
-        <button id="exportBtn">
-            <i class="fa-solid fa-file-export"></i> Export
-        </button>
-
-        <button id="importBtn">
-            <i class="fa-solid fa-file-import"></i> Import
-        </button>
-
-        <button id="clearBtn">
-            <i class="fa-solid fa-trash"></i> Clear All
-        </button>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Network Infrastructure <span>Simulator</span></h1>
+      <p>Build a network, send packets through it and see how each device handles them.</p>
     </div>
+    <div class="tools">
+      <button class="btn" type="button" id="btnExample"><i class="fa-solid fa-diagram-project"></i> Load example network</button>
+      <button class="btn danger" type="button" id="btnClear"><i class="fa-solid fa-trash"></i> Clear canvas</button>
+    </div>
+  </header>
 
-    <div id="canvas"></div>
+  <div class="layout">
+    <aside class="panel">
+      <p class="label">Devices</p>
+      <div class="palette" id="palette"></div>
+    </aside>
 
-    <input id="fileInput" type="file" accept="application/json" style="display:none" />
+    <section class="stage">
+      <div class="banner" id="banner" hidden></div>
+      <div class="boardwrap">
+        <svg id="board" viewBox="0 0 1200 720" role="application" aria-label="Network canvas">
+          <defs>
+            <pattern id="gridp" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="rgba(0,170,255,0.07)" stroke-width="1"/></pattern>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect class="board-bg" x="0" y="0" width="1200" height="720"/>
+          <rect x="0" y="0" width="1200" height="720" fill="url(#gridp)"/>
+          <g id="gWires"></g>
+          <line id="ghost" class="ghost" x1="0" y1="0" x2="0" y2="0" visibility="hidden"/>
+          <g id="gNodes"></g>
+          <g id="gPackets"></g>
+        </svg>
+      </div>
+      <p class="help"><span><b>Add:</b> click a device on the left</span><span><b>Move:</b> drag a device</span><span><b>Connect:</b> drag from the blue dot to another device</span><span><b>Delete:</b> select it and press Delete</span></p>
+      <div class="legend"><span style="--c:var(--z-staff)">VLAN 10 Staff</span><span style="--c:var(--z-guest)">VLAN 20 Guest</span><span style="--c:var(--z-servers)">VLAN 30 Servers</span><span style="--c:var(--z-dmz)">DMZ</span><span style="--c:var(--z-internet)">Internet</span></div>
+    </section>
 
-    <script src="script.js"></script>
+    <aside class="side">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="device">Device</button>
+        <button type="button" role="tab" data-tab="traffic">Traffic</button>
+        <button type="button" role="tab" data-tab="challenges">Challenges</button>
+      </div>
+      <div class="panel" id="side"></div>
+    </aside>
+  </div>
+
+  <footer>
+    <p><b>Disclaimer:</b> This simulator is for educational purposes only. Devices, addresses and traffic are simplified and fictional.</p>
+    <p>&copy; 2026 Catherine Jason &middot; Network Infrastructure Simulator v2.0 &middot; <a href="https://www.catherinejason.com" target="_blank" rel="noopener">catherinejason.com</a></p>
+  </footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- data ---------------- */
+const TYPES = {
+  cloud:{label:"Internet", fa:"fa-cloud", glyph:"", prefix:"NET", role:"end", layers:[1,7],
+    purpose:"Everything outside your network. Websites, attackers and cloud services all live here.",
+    osi:"All layers", ports:"Any", config:"Not yours to configure. Your firewall decides what gets in and out.",
+    security:"Treat it as untrusted. Never let it reach internal systems directly.",
+    use:"The connection your internet provider hands you."},
+  router:{label:"Router", fa:"fa-route", glyph:"", prefix:"R", role:"l3", layers:[1,3],
+    purpose:"Connects different networks and moves traffic between them using IP addresses.",
+    osi:"Layer 3 · Network", ports:"Routes any port. Managed over SSH (22).",
+    config:"Interfaces, IP addresses, routes, gateway for each VLAN.",
+    security:"Change default logins, turn off unused services, use SSH instead of Telnet.",
+    use:"The edge of a small office, or routing between VLANs inside a building."},
+  switch:{label:"Switch", fa:"fa-network-wired", glyph:"", prefix:"SW", role:"l2", layers:[1,2],
+    purpose:"Connects devices on the same network and forwards frames by MAC address.",
+    osi:"Layer 2 · Data Link", ports:"Physical ports (Fa0/1, Gi0/1). Managed over SSH (22).",
+    config:"VLANs, access and trunk ports, port security.",
+    security:"Shut down unused ports, use VLANs to separate groups, turn on port security.",
+    use:"The box in the network closet every desk cable runs to."},
+  firewall:{label:"Firewall", fa:"fa-shield-halved", glyph:"", prefix:"FW", role:"l3", layers:[1,7], rules:true,
+    purpose:"Checks every connection against rules and allows or blocks it. Also routes between zones.",
+    osi:"Layers 3 to 7 · next gen firewalls read applications too",
+    ports:"Filters any port. Rules usually mention 443, 80, 53, 22 and 3389.",
+    config:"Rules: from zone, to zone, service, allow or deny. Rules run top to bottom.",
+    security:"Default deny, allow only what is needed, log blocked traffic and send it to the SIEM.",
+    use:"Between the internet and the office, and between the office and the DMZ."},
+  ap:{label:"Access Point", fa:"fa-wifi", glyph:"", prefix:"AP", role:"l2", layers:[1,2],
+    purpose:"Lets wireless devices join the wired network.",
+    osi:"Layer 2 · Data Link", ports:"Wi-Fi radio. Managed over HTTPS (443).",
+    config:"SSIDs, which VLAN each SSID uses, Wi-Fi security.",
+    security:"Use WPA3, keep a separate guest SSID on its own VLAN, use strong passphrases.",
+    use:"Mounted on the ceiling so laptops and phones can get online."},
+  server:{label:"Server", fa:"fa-server", glyph:"", prefix:"SRV", role:"end", layers:[1,7], zone:"servers",
+    purpose:"Hosts shared files, apps or directory services for the office.",
+    osi:"Layer 7 · Application services", ports:"445 SMB, 389 LDAP, 3389 RDP, 53 DNS",
+    config:"Static IP, services, backups, admin accounts.",
+    security:"Patch often, limit admin access, keep it off the internet, back it up.",
+    use:"File shares and Active Directory domain controllers."},
+  webserver:{label:"Web Server", fa:"fa-globe", glyph:"", prefix:"WEB", role:"end", layers:[1,7], zone:"dmz",
+    purpose:"Hosts a public website or app that people on the internet need to reach.",
+    osi:"Layer 7 · Application (HTTP/HTTPS)", ports:"443 HTTPS, 80 HTTP",
+    config:"Web service, TLS certificate, static IP in the DMZ.",
+    security:"Put it in a DMZ, only allow 443 from the internet, never let it reach the internal network.",
+    use:"A nonprofit's donation page or a company website."},
+  pc:{label:"Workstation", fa:"fa-desktop", glyph:"", prefix:"PC", role:"end", layers:[1,7], zone:"staff",
+    purpose:"The computer staff use every day.",
+    osi:"All layers (it creates and reads the traffic)", ports:"Connects out to 443, 53. Should not accept RDP from outside.",
+    config:"IP address (usually from DHCP), gateway, DNS.",
+    security:"EDR, automatic updates, standard user accounts, no direct internet exposure.",
+    use:"Desks in the office."},
+  laptop:{label:"Laptop", fa:"fa-laptop", glyph:"", prefix:"LT", role:"end", layers:[1,7], zone:"guest",
+    purpose:"A mobile device that usually connects over Wi-Fi.",
+    osi:"All layers", ports:"Connects out to 443, 53.",
+    config:"Wi-Fi network, IP from DHCP.",
+    security:"Disk encryption, VPN when remote, guests stay on the guest VLAN.",
+    use:"Visitors, volunteers and staff working away from a desk."},
+  ids:{label:"IDS / IPS Sensor", fa:"fa-satellite-dish", glyph:"", prefix:"IDS", role:"sensor", layers:[3,7],
+    purpose:"Watches a copy of network traffic for attacks and sends alerts to the SOC.",
+    osi:"Layers 3 to 7", ports:"Listens on a mirror (SPAN) port. Sends alerts to the SIEM.",
+    config:"Detection rules, which switch or firewall it watches, where alerts go.",
+    security:"Tune rules to cut noise, send every alert to the SIEM, keep its management port private.",
+    use:"Plugged into the core switch so the SOC can see what is moving through the network."}
+};
+const ORDER = ["cloud","router","firewall","switch","ap","server","webserver","pc","laptop","ids"];
+const ZONES = {
+  staff:{label:"Staff", vlan:"VLAN 10", net:"10.10.10", color:"var(--z-staff)"},
+  guest:{label:"Guest", vlan:"VLAN 20", net:"10.20.20", color:"var(--z-guest)"},
+  servers:{label:"Servers", vlan:"VLAN 30", net:"10.30.30", color:"var(--z-servers)"},
+  dmz:{label:"DMZ", vlan:"DMZ", net:"172.16.50", color:"var(--z-dmz)"},
+  internet:{label:"Internet", vlan:"Internet", net:"203.0.113", color:"var(--z-internet)"}
+};
+const SERVICES = {
+  https:{label:"HTTPS", port:"443", desc:"secure web traffic"},
+  http:{label:"HTTP", port:"80", desc:"web traffic"},
+  dns:{label:"DNS", port:"53", desc:"name lookups"},
+  ssh:{label:"SSH", port:"22", desc:"remote admin"},
+  rdp:{label:"RDP", port:"3389", desc:"remote desktop"},
+  smb:{label:"SMB", port:"445", desc:"file sharing"},
+  icmp:{label:"Ping", port:"ICMP", desc:"a connectivity test"}
+};
+const OSI = ["Physical","Data Link","Network","Transport","Session","Presentation","Application"];
+const W=1200, H=720, BW=104, BH=78;
+
+/* ---------------- state ---------------- */
+const KEY = "nis-v3";
+let S = {devices:[], links:[], active:null, done:{}, example:false};
+let sel = null;            // {kind:'device'|'link', id}
+let tab = "device";
+let T = {src:"", dst:"", svc:"https"};
+let lastRun = null;        // {result, shown, hop}
+let checkRes = null;       // challenge check results
+let anim = null;
+const reduce = (() => { try{ return window.matchMedia("(prefers-reduced-motion: reduce)").matches }catch(e){ return false } })();
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)) }catch(e){} }
+function load(){ try{ const r=localStorage.getItem(KEY); if(r){ const s=JSON.parse(r); if(s && Array.isArray(s.devices)) return s; } }catch(e){} return null }
+
+const $ = id => document.getElementById(id);
+const board = $("board");
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])) }
+let toastT;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>{t.hidden=true},3200) }
+function uid(){ return Math.random().toString(36).slice(2,9) }
+const dev = id => S.devices.find(d=>d.id===id);
+function zoneOf(d){ return d.type==="cloud" ? "internet" : (d.zone || null) }
+function isEnd(d){ return TYPES[d.type].role==="end" }
+function neighbors(id){ return S.links.filter(l=>l.a===id||l.b===id).map(l=> l.a===id?l.b:l.a) }
+
+function nextName(type){
+  const p=TYPES[type].prefix; if(type==="cloud" && !S.devices.some(d=>d.name==="NET")) return "NET";
+  let n=1; while(S.devices.some(d=>d.name===p+n)) n++; return p+n;
+}
+function freeSpot(){
+  const cx=W/2, cy=H/2;
+  for(let r=0;r<12;r++){
+    for(let k=0;k<Math.max(1,r*6);k++){
+      const a=(k/Math.max(1,r*6))*Math.PI*2, x=Math.round(cx+Math.cos(a)*r*120), y=Math.round(cy+Math.sin(a)*r*95);
+      if(x<70||x>W-70||y<60||y>H-70) continue;
+      if(S.devices.every(d=>Math.abs(d.x-x)>BW+24||Math.abs(d.y-y)>BH+40)) return {x,y};
+    }
+  }
+  return {x:80+Math.random()*(W-160), y:70+Math.random()*(H-160)};
+}
+function addDevice(type, opts){
+  const t=TYPES[type]; const p = opts && opts.x!=null ? {x:opts.x,y:opts.y} : freeSpot();
+  const d={id:uid(), type, name:(opts&&opts.name)||nextName(type), x:p.x, y:p.y};
+  if(t.zone) d.zone=(opts&&opts.zone)||t.zone;
+  if(t.rules) d.rules=(opts&&opts.rules)||[];
+  S.devices.push(d); return d;
+}
+function connect(a,b,quiet){
+  if(a===b) return false;
+  if(S.links.some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a))){ if(!quiet) toast("Those two are already connected."); return false; }
+  const A=dev(a), B=dev(b);
+  if(isEnd(A)&&isEnd(B)){ if(!quiet) toast("Connect end devices through a switch, access point, router or firewall."); return false; }
+  if(A.type==="ids"&&B.type==="ids"){ if(!quiet) toast("Connect the sensor to a switch or firewall."); return false; }
+  S.links.push({id:uid(), a, b}); return true;
+}
+function removeDevice(id){ S.devices=S.devices.filter(d=>d.id!==id); S.links=S.links.filter(l=>l.a!==id&&l.b!==id); }
+
+/* addressing */
+function ipMap(){
+  const m={}, count={};
+  S.devices.forEach(d=>{ const z=zoneOf(d); if(!z||!isEnd(d)) return; count[z]=(count[z]||10)+1; m[d.id]=ZONES[z].net+"."+count[z]; });
+  return m;
+}
+
+/* ---------------- example + starters ---------------- */
+function rule(from,to,svc,action){ return {from,to,svc,action} }
+function buildExample(){
+  S.devices=[]; S.links=[];
+  const NET=addDevice("cloud",{x:100,y:360}), FW=addDevice("firewall",{x:320,y:360,rules:[rule("staff","any","any","allow"),rule("internet","dmz","https","allow"),rule("guest","internet","any","allow")]});
+  const SWD=addDevice("switch",{x:320,y:130,name:"SW-DMZ"}), WEB=addDevice("webserver",{x:560,y:130});
+  const SWC=addDevice("switch",{x:560,y:360,name:"SW-CORE"}), IDS=addDevice("ids",{x:320,y:590});
+  const PC1=addDevice("pc",{x:820,y:150}), PC2=addDevice("pc",{x:820,y:290}), SRV=addDevice("server",{x:820,y:430});
+  const AP=addDevice("ap",{x:820,y:590}), LT=addDevice("laptop",{x:1060,y:590});
+  [[NET,FW],[FW,SWD],[SWD,WEB],[FW,SWC],[SWC,PC1],[SWC,PC2],[SWC,SRV],[SWC,AP],[AP,LT],[FW,IDS]].forEach(([a,b])=>connect(a.id,b.id,true));
+  S.example=true; S.active=null; sel=null; lastRun=null; checkRes=null;
+  T={src:NET.id, dst:WEB.id, svc:"https"};
+}
+const STARTERS = {
+  blank(){ S.devices=[]; S.links=[]; addDevice("cloud",{x:110,y:360}); },
+  office(){ S.devices=[]; S.links=[];
+    const N=addDevice("cloud",{x:110,y:360}), R=addDevice("router",{x:330,y:360}), SW=addDevice("switch",{x:580,y:360}), P1=addDevice("pc",{x:840,y:270}), P2=addDevice("pc",{x:840,y:450});
+    [[N,R],[R,SW],[SW,P1],[SW,P2]].forEach(([a,b])=>connect(a.id,b.id,true)); },
+  firewalled(){ S.devices=[]; S.links=[];
+    const N=addDevice("cloud",{x:110,y:420}), F=addDevice("firewall",{x:330,y:420,rules:[rule("staff","internet","https","allow")]}), SW=addDevice("switch",{x:580,y:420}), P1=addDevice("pc",{x:840,y:330}), P2=addDevice("pc",{x:840,y:510});
+    [[N,F],[F,SW],[SW,P1],[SW,P2]].forEach(([a,b])=>connect(a.id,b.id,true)); },
+  segmented(){ S.devices=[]; S.links=[];
+    const N=addDevice("cloud",{x:110,y:360}), F=addDevice("firewall",{x:330,y:360,rules:[rule("staff","any","any","allow")]}), SW=addDevice("switch",{x:580,y:360,name:"SW-CORE"}), P1=addDevice("pc",{x:840,y:250}), SV=addDevice("server",{x:840,y:400});
+    [[N,F],[F,SW],[SW,P1],[SW,SV]].forEach(([a,b])=>connect(a.id,b.id,true)); },
+  monitor(){ buildExample(); const ids=S.devices.find(d=>d.type==="ids"); removeDevice(ids.id); S.example=false; }
+};
+
+/* ---------------- simulation ---------------- */
+function art(k){ return /^[AEFHILMNORSX]/.test(SERVICES[k].label)?"an":"a" }
+function svcLabel(k){ const s=SERVICES[k]; return s.port==="ICMP"? "Ping (ICMP)" : s.label+" "+s.port }
+function findPath(src,dst,needL3){
+  const start=src+"|0", prev={}; prev[start]=null; const q=[[src,0,null]];
+  while(q.length){
+    const [n,l3,from]=q.shift();
+    if(n===dst && (!needL3||l3>0)){ const path=[]; let k=n+"|"+l3; while(k){ path.unshift(k.split("|")[0]); k=prev[k]; } return path; }
+    const D=dev(n);
+    for(const m of neighbors(n)){
+      const M=dev(m); if(!M) continue;
+      if(m!==dst && TYPES[M.type].role!=="l2" && TYPES[M.type].role!=="l3") continue;
+      if(m===from && TYPES[D.type].role!=="l3") continue;
+      const nl3=Math.min(2, l3 + (TYPES[M.type].role==="l3"?1:0));
+      const k=m+"|"+nl3; if(k in prev) continue;
+      prev[k]=n+"|"+l3; q.push([m,nl3,n]);
+    }
+  }
+  return null;
+}
+function ruleMatch(r,sz,dz,svc){ return (r.from==="any"||r.from===sz)&&(r.to==="any"||r.to===dz)&&(r.svc==="any"||r.svc===svc) }
+function ruleText(r){ return (r.from==="any"?"Any":ZONES[r.from].label)+" to "+(r.to==="any"?"Any":ZONES[r.to].label)+", "+(r.svc==="any"?"any service":SERVICES[r.svc].label) }
+
+function simulate(srcId,dstId,svc){
+  const A=dev(srcId), B=dev(dstId), ips=ipMap();
+  const out={ok:false, path:null, steps:[], reason:"", blockedAt:null, ids:null, alert:null};
+  if(!A||!B||srcId===dstId){ out.reason="Pick two different devices."; return out; }
+  const sz=zoneOf(A), dz=zoneOf(B);
+  if(!sz||!dz){ out.reason="Both ends need to be end devices."; return out; }
+  const cross = sz!==dz;
+  let path=findPath(srcId,dstId,cross);
+  const S1=SERVICES[svc];
+  if(!path){
+    const flat = cross ? findPath(srcId,dstId,false) : null;
+    out.steps.push({dev:srcId, chip:"L7 to L1", text:A.name+" ("+ips[srcId]+") builds "+art(svc)+" "+svcLabel(svc)+" packet for "+B.name+" ("+ips[dstId]+")."});
+    if(flat){
+      out.path=flat; const stop=flat[flat.length-2];
+      for(let i=1;i<flat.length-1;i++){ const D=dev(flat[i]); out.steps.push({dev:flat[i], chip:"L2", text:D.name+" forwards the frame inside "+ZONES[sz].vlan+"."}); }
+      out.blockedAt=stop; out.reason=A.name+" is in "+ZONES[sz].vlan+" and "+B.name+" is in "+ZONES[dz].vlan+". Switches keep VLANs apart, so this traffic needs a router or firewall to cross between them.";
+      out.steps.push({dev:stop, chip:"blocked", bad:true, text:"No Layer 3 device on the way. The frame cannot leave "+ZONES[sz].vlan+"."});
+    } else {
+      out.reason="There is no cable path from "+A.name+" to "+B.name+". Connect them through a switch, router or firewall.";
+    }
+    return out;
+  }
+  out.path=path;
+  out.steps.push({dev:srcId, chip:"L7 to L1", text:A.name+" ("+ips[srcId]+") builds "+art(svc)+" "+svcLabel(svc)+" packet for "+B.name+" ("+ips[dstId]+")."});
+  let seg=sz, fwSeen=false;
+  for(let i=1;i<path.length-1;i++){
+    const D=dev(path[i]), role=TYPES[D.type].role;
+    if(role==="l2"){
+      out.steps.push({dev:D.id, chip:"L2", text: D.type==="ap" ? D.name+" bridges Wi-Fi to the wired network in "+ZONES[seg].vlan+"." : D.name+" forwards the frame by MAC address inside "+ZONES[seg].vlan+"."});
+    } else if(D.type==="router"){
+      out.steps.push({dev:D.id, chip:"L3", text:D.name+" routes the packet from "+ZONES[seg].net+".0/24 toward "+ZONES[dz].net+".0/24."});
+      seg=dz;
+    } else if(D.type==="firewall"){
+      fwSeen=true;
+      const rules=D.rules||[]; let hit=-1;
+      for(let r=0;r<rules.length;r++){ if(ruleMatch(rules[r],sz,dz,svc)){ hit=r; break; } }
+      if(hit<0 || rules[hit].action==="deny"){
+        out.blockedAt=D.id;
+        out.reason = hit<0 ? D.name+" has no rule allowing "+S1.label+" from "+ZONES[sz].label+" to "+ZONES[dz].label+", so the default deny rule blocks it."
+                           : D.name+" rule "+(hit+1)+" ("+ruleText(rules[hit])+") denies it.";
+        out.steps.push({dev:D.id, chip:"L3 to L7", bad:true, text:D.name+" checks its rules. "+(hit<0?"Nothing matches, so the default deny blocks it.":"Rule "+(hit+1)+" denies it.")});
+        break;
+      }
+      out.steps.push({dev:D.id, chip:"L3 to L7", text:D.name+" checks its rules. Rule "+(hit+1)+" ("+ruleText(rules[hit])+") allows it, then routes it on."});
+      seg=dz;
+    }
+  }
+  if(!out.blockedAt){
+    out.ok=true;
+    out.steps.push({dev:dstId, chip:"L1 to L7", good:true, text:B.name+" receives it"+(S1.port==="ICMP"?" and sends a reply.":" on port "+S1.port+" ("+S1.desc+").")});
+    out.reason = "Delivered from "+A.name+" to "+B.name+".";
+    if(sz==="internet" && !fwSeen) out.warn="No firewall checked this traffic. Anything from the internet can reach "+B.name+".";
+  }
+  // IDS visibility
+  const idsList=S.devices.filter(d=>d.type==="ids");
+  const lastIdx = out.blockedAt ? path.indexOf(out.blockedAt) : path.length-1;
+  const walked = path.slice(0,lastIdx+1);
+  for(const s of idsList){ if(neighbors(s.id).some(n=>walked.includes(n))){ out.ids=s.id; break; } }
+  if(out.ids){
+    const I=dev(out.ids), risky = sz==="internet" && (dz==="staff"||dz==="servers"||dz==="guest"||["rdp","smb","ssh"].includes(svc));
+    const lateral = sz==="guest" && (dz==="staff"||dz==="servers");
+    if(risky||lateral){
+      out.alert = I.name+" alert: "+S1.label+" from "+A.name+" ("+ZONES[sz].label+") to "+B.name+" ("+ZONES[dz].label+") "+(out.ok?"got through. High severity, sent to the SOC.":"was blocked. Logged and sent to the SOC queue.");
+    }
+    out.steps.push({dev:out.ids, chip:"IDS", warn:true, text: out.alert || (I.name+" saw a copy of this traffic. Nothing suspicious.")});
+  }
+  return out;
+}
+
+/* ---------------- challenges ---------------- */
+const by = t => S.devices.filter(d=>d.type===t);
+const inZone = z => S.devices.filter(d=>isEnd(d)&&zoneOf(d)===z);
+const ok = (a,b,s) => !!(a&&b) && simulate(a.id,b.id,s).ok;
+const blocked = (a,b,s) => !!(a&&b) && !simulate(a.id,b.id,s).ok && !!simulate(a.id,b.id,s).path;
+function reachableWithout(src, skipType){
+  const seen=new Set([src]), q=[src];
+  while(q.length){ const n=q.shift(); for(const m of neighbors(n)){ const M=dev(m); if(seen.has(m)||M.type===skipType) continue; seen.add(m); if(TYPES[M.type].role==="l2"||TYPES[M.type].role==="l3") q.push(m); } }
+  return seen;
+}
+const CHALLENGES = [
+  {title:"Small office", starter:"blank",
+   goal:"Build a basic office network so two staff computers can get online and talk to each other.",
+   objs:[
+    {t:"Place a router, a switch and at least 2 workstations", hint:"Use the device list on the left.", f:()=>by("router").length>0&&by("switch").length>0&&by("pc").length>=2},
+    {t:"Every workstation can browse the internet (HTTPS)", hint:"Chain them: Internet, router, switch, workstations.", f:()=>{const n=by("cloud")[0], p=by("pc"); return p.length>0&&p.every(x=>ok(x,n,"https"))}},
+    {t:"The workstations can ping each other", hint:"Plug both into the same switch.", f:()=>{const p=by("pc"); return p.length>=2&&ok(p[0],p[1],"icmp")}}
+   ]},
+  {title:"Put a firewall in front", starter:"office",
+   goal:"Right now nothing checks traffic coming in from the internet. Put a firewall in charge and write a rule so staff can still get online.",
+   objs:[
+    {t:"Add a firewall", hint:"Click Firewall in the device list.", f:()=>by("firewall").length>0},
+    {t:"Every path from the internet to staff goes through the firewall", hint:"Select the old cable or router and delete it, then wire Internet to firewall to switch.", f:()=>{const n=by("cloud")[0], st=inZone("staff"); if(!n||!st.length) return false; const r=reachableWithout(n.id,"firewall"); return st.every(x=>!r.has(x.id))}},
+    {t:"Staff can still browse the internet (HTTPS)", hint:"Select the firewall and add a rule: Staff to Internet, HTTPS, Allow.", f:()=>{const n=by("cloud")[0], st=inZone("staff"); return st.length>0&&st.every(x=>ok(x,n,"https"))}},
+    {t:"Nothing from the internet can reach staff (RDP)", hint:"Do not add rules that allow traffic from the Internet to Staff.", f:()=>{const n=by("cloud")[0], st=inZone("staff"); return st.length>0&&st.every(x=>blocked(n,x,"rdp"))}}
+   ]},
+  {title:"Build a DMZ", starter:"firewalled",
+   goal:"The organization needs a public website. Give it its own DMZ so the internet can reach the site but never the office.",
+   objs:[
+    {t:"Add a web server in the DMZ and connect it", hint:"Add a Web Server. Give it its own switch on another firewall cable.", f:()=>S.devices.some(d=>zoneOf(d)==="dmz"&&neighbors(d.id).length>0)},
+    {t:"The internet can reach the web server on HTTPS", hint:"Add a firewall rule: Internet to DMZ, HTTPS, Allow.", f:()=>{const n=by("cloud")[0], w=inZone("dmz")[0]; return ok(n,w,"https")}},
+    {t:"SSH from the internet to the web server is blocked", hint:"Only allow HTTPS, not Any service.", f:()=>{const n=by("cloud")[0], w=inZone("dmz")[0]; return blocked(n,w,"ssh")}},
+    {t:"The internet still cannot reach staff (RDP)", hint:"Keep the Internet to Staff traffic denied.", f:()=>{const n=by("cloud")[0], st=inZone("staff"); return st.length>0&&st.every(x=>blocked(n,x,"rdp"))}},
+    {t:"The web server does not share a switch with staff", hint:"A DMZ should sit on its own switch or firewall port.", f:()=>{const w=inZone("dmz"); return w.length>0&&w.every(x=>neighbors(x.id).every(n=>{const N=dev(n); return N.type!=="switch"&&N.type!=="ap" || neighbors(n).every(m=>zoneOf(dev(m))!=="staff")}))}}
+   ]},
+  {title:"Segment with VLANs", starter:"segmented",
+   goal:"Volunteers need Wi-Fi. Put them on a guest VLAN that gets internet access but cannot see staff computers or servers.",
+   objs:[
+    {t:"Connect a Guest laptop through an access point", hint:"Add an Access Point to the switch, then a Laptop to the access point. Laptops start in the Guest zone.", f:()=>S.devices.some(d=>d.type==="laptop"&&zoneOf(d)==="guest"&&neighbors(d.id).some(n=>dev(n).type==="ap"))},
+    {t:"Guests can browse the internet (HTTPS)", hint:"Add a firewall rule: Guest to Internet, HTTPS or Any, Allow.", f:()=>{const n=by("cloud")[0], g=inZone("guest"); return g.length>0&&g.every(x=>ok(x,n,"https"))}},
+    {t:"Guests cannot reach staff computers", hint:"Do not allow Guest to Any. Point the rule at Internet only.", f:()=>{const g=inZone("guest")[0], st=inZone("staff"); return !!g&&st.length>0&&st.every(x=>blocked(g,x,"icmp"))}},
+    {t:"Guests cannot reach servers (SMB)", hint:"Same idea: guests only get the internet.", f:()=>{const g=inZone("guest")[0], sv=inZone("servers"); return !!g&&sv.length>0&&sv.every(x=>blocked(g,x,"smb"))}},
+    {t:"Staff can still reach the file server (SMB)", hint:"The Staff to Any rule covers this.", f:()=>{const st=inZone("staff")[0], sv=inZone("servers"); return !!st&&sv.length>0&&sv.every(x=>ok(st,x,"smb"))}}
+   ]},
+  {title:"Watch the network", starter:"monitor",
+   goal:"Blocking attacks is good. Knowing about them is better. Add a sensor so blocked attempts show up as alerts for the SOC.",
+   objs:[
+    {t:"Connect an IDS sensor to a switch or firewall", hint:"Add an IDS / IPS Sensor and wire it to the core switch or the firewall.", f:()=>by("ids").some(s=>neighbors(s.id).some(n=>["switch","firewall"].includes(dev(n).type)))},
+    {t:"An RDP attempt from the internet is blocked and raises an alert", hint:"Traffic blocked at the firewall never reaches the core switch. Connect the sensor to the firewall so it sees attempts at the edge.", f:()=>{const n=by("cloud")[0], st=inZone("staff")[0]; if(!n||!st) return false; const r=simulate(n.id,st.id,"rdp"); return !r.ok&&!!r.alert}},
+    {t:"The public website still works (HTTPS)", hint:"Do not change the Internet to DMZ rule.", f:()=>{const n=by("cloud")[0], w=inZone("dmz")[0]; return ok(n,w,"https")}}
+   ]}
+];
+
+/* ---------------- render: board ---------------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function renderBoard(){
+  const ips=ipMap(); const hot=new Set(), deadN=new Set(), litL=new Set(), deadL=new Set();
+  if(lastRun && lastRun.result.path){
+    const p=lastRun.result.path, upto=Math.min(lastRun.hop, p.length-1);
+    for(let i=0;i<=upto;i++) hot.add(p[i]);
+    for(let i=0;i<upto;i++){ const L=S.links.find(l=>(l.a===p[i]&&l.b===p[i+1])||(l.b===p[i]&&l.a===p[i+1])); if(L) litL.add(L.id); }
+    if(lastRun.done && lastRun.result.blockedAt){ deadN.add(lastRun.result.blockedAt); hot.delete(lastRun.result.blockedAt); }
+  }
+  let w="";
+  for(const l of S.links){
+    const A=dev(l.a), B=dev(l.b); if(!A||!B) continue;
+    const wifi = A.type==="ap"&&isEnd(B) || B.type==="ap"&&isEnd(A);
+    const cls="wire"+(wifi?" wifi":"")+(sel&&sel.kind==="link"&&sel.id===l.id?" sel":"")+(litL.has(l.id)?" lit":"");
+    w+='<g data-link="'+l.id+'"><line class="hit" x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"/><line class="'+cls+'" x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"/></g>';
+  }
+  $("gWires").innerHTML=w;
+  let n="";
+  for(const d of S.devices){
+    const t=TYPES[d.type], z=zoneOf(d), zc=z?ZONES[z].color:"#22344a";
+    const cls="node"+(sel&&sel.kind==="device"&&sel.id===d.id?" sel":"")+(hot.has(d.id)?" hot":"")+(deadN.has(d.id)?" blocked":"");
+    n+='<g class="'+cls+'" data-node="'+d.id+'" transform="translate('+d.x+' '+d.y+')">'+
+      '<rect class="body" x="'+(-BW/2)+'" y="'+(-BH/2)+'" width="'+BW+'" height="'+BH+'" rx="12"/>'+
+      (z?'<rect x="'+(-BW/2+6)+'" y="'+(BH/2-7)+'" width="'+(BW-12)+'" height="4" rx="2" style="fill:'+zc+'"/>':'')+
+      '<text class="ico" y="0" style="'+(z?"fill:"+zc:"")+'">'+t.glyph+'</text>'+
+      '<text class="nm" y="25">'+esc(d.name)+'</text>'+
+      (ips[d.id]?'<text class="ip" y="'+(BH/2+19)+'">'+ips[d.id]+'</text>':'')+
+      '<circle class="handle" data-handle="'+d.id+'" cx="'+(BW/2)+'" cy="0" r="10"/>'+
+    '</g>';
+  }
+  $("gNodes").innerHTML=n;
+  const b=$("banner");
+  if(S.example && !S.active){ b.hidden=false; b.innerHTML='<span>This is an example network with a DMZ, staff, server and guest VLANs, and an IDS. Try the <b>Traffic</b> tab, or clear it and build your own.</span><button class="btn small" type="button" id="bannerX">Got it</button>'; }
+  else if(S.devices.length===0){ b.hidden=false; b.innerHTML='<span>The canvas is empty. Click a device on the left to add it, or load the example network.</span>'; }
+  else b.hidden=true;
+}
+
+/* ---------------- render: side ---------------- */
+function zoneSelect(id,val,withAny,exclude){
+  let o=withAny?'<option value="any"'+(val==="any"?" selected":"")+'>Any</option>':"";
+  for(const k in ZONES){ if(exclude&&exclude.includes(k)) continue; o+='<option value="'+k+'"'+(val===k?" selected":"")+'>'+ZONES[k].label+(k!=="internet"&&k!=="dmz"?" ("+ZONES[k].vlan+")":"")+'</option>'; }
+  return '<select id="'+id+'">'+o+'</select>';
+}
+function svcSelect(id,val,withAny){
+  let o=withAny?'<option value="any"'+(val==="any"?" selected":"")+'>Any service</option>':"";
+  for(const k in SERVICES) o+='<option value="'+k+'"'+(val===k?" selected":"")+'>'+svcLabel(k)+'</option>';
+  return '<select id="'+id+'">'+o+'</select>';
+}
+function viewDevice(){
+  if(sel && sel.kind==="link"){
+    const L=S.links.find(l=>l.id===sel.id); if(!L){ sel=null; return viewDevice(); }
+    const A=dev(L.a), B=dev(L.b), wifi=A.type==="ap"&&isEnd(B)||B.type==="ap"&&isEnd(A);
+    return '<p class="label">Selected cable</p><div class="stack"><p><b>'+esc(A.name)+'</b> to <b>'+esc(B.name)+'</b></p>'+
+      '<p class="muted">'+(wifi?"Wireless connection between an access point and a client.":"Ethernet cable. Layer 1 carries the bits, the devices at each end decide what to do with them.")+'</p>'+
+      '<div><button class="btn danger" type="button" data-act="del">Delete cable</button></div></div>';
+  }
+  if(!sel){
+    const c={}; S.devices.forEach(d=>c[d.type]=(c[d.type]||0)+1);
+    return '<p class="label">Device details</p><div class="stack"><p>Select a device on the canvas to see what it does, which OSI layer it works at, common ports and security tips.</p>'+
+      '<p class="muted">'+S.devices.length+' devices · '+S.links.length+' connections</p></div>';
+  }
+  const d=dev(sel.id); if(!d){ sel=null; return viewDevice(); }
+  const t=TYPES[d.type], ips=ipMap(), z=zoneOf(d);
+  let h='<div class="dhead"><div class="dicon"><i class="fa-solid '+t.fa+'"></i></div><div style="flex:1;min-width:0"><input id="dName" value="'+esc(d.name)+'" maxlength="14" aria-label="Device name"><div class="ty">'+t.label+(ips[d.id]?' · '+ips[d.id]:'')+'</div></div></div>';
+  if(t.zone) h+='<div class="field"><label for="dZone">Zone / VLAN</label>'+zoneSelect("dZone",d.zone,false,["internet"])+'</div>';
+  if(t.rules){
+    const rs=d.rules||[];
+    h+='<div class="field"><label>Firewall rules (checked top to bottom)</label><table class="rules"><thead><tr><th>#</th><th>From</th><th>To</th><th>Service</th><th>Action</th><th></th></tr></thead><tbody>'+
+      rs.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(r.from==="any"?"Any":ZONES[r.from].label)+'</td><td>'+(r.to==="any"?"Any":ZONES[r.to].label)+'</td><td>'+(r.svc==="any"?"Any":SERVICES[r.svc].label)+'</td><td class="'+r.action+'">'+r.action+'</td><td><button class="x" type="button" data-act="delrule" data-i="'+i+'" aria-label="Delete rule '+(i+1)+'">&times;</button></td></tr>').join("")+
+      '<tr class="implicit"><td>*</td><td>Any</td><td>Any</td><td>Any</td><td class="deny">deny</td><td></td></tr></tbody></table>'+
+      '<div class="addrule">'+zoneSelect("rFrom","staff",true)+zoneSelect("rTo","internet",true)+svcSelect("rSvc","https",true)+'<select id="rAct"><option value="allow">Allow</option><option value="deny">Deny</option></select></div>'+
+      '<div style="margin-top:6px"><button class="btn small primary" type="button" data-act="addrule">Add rule</button></div></div>';
+  }
+  h+='<div class="facts">'+
+    '<div class="fact"><b>What it does</b><p>'+esc(t.purpose)+'</p></div>'+
+    '<div class="fact"><b>OSI layer</b><p>'+esc(t.osi)+'</p></div>'+
+    '<div class="fact"><b>Common ports</b><p>'+esc(t.ports)+'</p></div>'+
+    '<div class="fact"><b>What you configure</b><p>'+esc(t.config)+'</p></div>'+
+    '<div class="fact"><b>Security tips</b><p>'+esc(t.security)+'</p></div>'+
+    '<div class="fact"><b>Where you see it</b><p>'+esc(t.use)+'</p></div></div>';
+  h+='<div style="margin-top:12px"><button class="btn danger small" type="button" data-act="del">Delete device</button></div>';
+  return h;
+}
+function viewTraffic(){
+  const ends=S.devices.filter(isEnd);
+  if(ends.length<2) return '<p class="label">Send traffic</p><p>Add at least two end devices (Internet, servers, workstations or laptops) and connect them to test traffic.</p>';
+  if(!dev(T.src)) T.src=ends[0].id; if(!dev(T.dst)||T.dst===T.src) T.dst=(ends.find(e=>e.id!==T.src)||ends[1]).id;
+  const opt=v=>ends.map(e=>'<option value="'+e.id+'"'+(e.id===v?" selected":"")+'>'+esc(e.name)+' · '+ZONES[zoneOf(e)].label+'</option>').join("");
+  let h='<p class="label">Send traffic</p><div class="row2"><div class="field" style="margin:0"><label for="tSrc">From</label><select id="tSrc">'+opt(T.src)+'</select></div><div class="field" style="margin:0"><label for="tDst">To</label><select id="tDst">'+opt(T.dst)+'</select></div></div>'+
+    '<div class="field"><label for="tSvc">Service</label>'+svcSelect("tSvc",T.svc,false)+'</div>'+
+    '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" data-act="send"'+(anim?" disabled":"")+'><i class="fa-solid fa-paper-plane"></i> Send packet</button></div>';
+  const net=by("cloud")[0], web=inZone("dmz")[0], st=inZone("staff")[0], gu=inZone("guest")[0], sv=inZone("servers")[0];
+  const pre=[[net,web,"https"],[net,st,"rdp"],[gu,sv,"smb"],[st,sv,"smb"],[gu,net,"https"]].filter(p=>p[0]&&p[1]);
+  if(pre.length) h+='<div class="field"><label>Quick tests</label><div class="presets">'+pre.map(p=>'<button class="btn small" type="button" data-act="preset" data-s="'+p[0].id+'" data-d="'+p[1].id+'" data-v="'+p[2]+'">'+esc(p[0].name)+' to '+esc(p[1].name)+' · '+SERVICES[p[2]].label+'</button>').join("")+'</div></div>';
+  if(lastRun){
+    const r=lastRun.result, shown=r.steps.slice(0, lastRun.shown);
+    const cur = shown.length? dev(shown[shown.length-1].dev):null;
+    const L = cur ? (shown[shown.length-1].chip==="IDS"?TYPES.ids.layers:TYPES[cur.type].layers) : [0,0];
+    h+='<div class="field"><label>Packet trace</label><ol class="trace">'+shown.map(s=>'<li><span class="chip'+(s.bad?" bad":s.good?" good":s.warn?" warn":"")+'">'+esc(s.chip)+'</span><span>'+esc(s.text)+'</span></li>').join("")+'</ol></div>';
+    if(lastRun.done){
+      h+='<div class="result '+(r.ok?"ok":"no")+'" style="margin-top:10px"><b>'+(r.ok?"Allowed":"Blocked")+'</b>'+esc(r.reason)+(r.warn?'<br><span style="color:var(--warn)">'+esc(r.warn)+'</span>':'')+'</div>';
+    }
+    h+='<div class="field"><label>OSI layers in use'+(cur?' at '+esc(cur.name):'')+'</label><div class="osi">'+OSI.map((n,i)=>'<div class="'+(i+1>=L[0]&&i+1<=L[1]?"on":"")+'"><span>'+(i+1)+' '+n+'</span></div>').join("")+'</div></div>';
+  }
+  return h;
+}
+function viewChallenges(){
+  const total=CHALLENGES.length, nd=Object.keys(S.done).length;
+  let h='<p class="label">Challenges · '+nd+' of '+total+' complete</p><div class="progress"><i style="width:'+(nd/total*100)+'%"></i></div><div class="ch" style="margin-top:10px">'+
+    CHALLENGES.map((c,i)=>'<button class="chbtn'+(S.active===i?" on":"")+'" type="button" data-act="pick" data-i="'+i+'"><span class="n">0'+(i+1)+'</span><span class="t">'+esc(c.title)+'</span><span class="s'+(S.done[i]?" done":"")+'">'+(S.done[i]?"Done":S.active===i?"Active":"")+'</span></button>').join("")+'</div>';
+  if(S.active!==null && S.active!==undefined){
+    const c=CHALLENGES[S.active];
+    h+='<div class="field" style="margin-top:14px"><label>Goal</label><p>'+esc(c.goal)+'</p></div>'+
+      '<div class="field"><label>Objectives</label><ul class="obj">'+c.objs.map((o,i)=>{const r=checkRes&&checkRes.ch===S.active?checkRes.r[i]:null; return '<li><span class="m'+(r===true?" ok":r===false?" no":"")+'">'+(r===true?"✓":r===false?"✗":"·")+'</span><span>'+esc(o.t)+(r===false?'<span class="why">Hint: '+esc(o.hint)+'</span>':'')+'</span></li>'}).join("")+'</ul></div>'+
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" data-act="check">Check my network</button><button class="btn" type="button" data-act="restartch">Restart challenge</button></div>';
+    if(checkRes&&checkRes.ch===S.active&&checkRes.r.every(Boolean)) h+='<div class="result ok" style="margin-top:10px"><b>Challenge complete</b>'+(S.active<total-1?"Nice work. Pick the next challenge when you are ready.":"You finished every challenge.")+'</div>';
+  } else {
+    h+='<p class="muted" style="margin-top:12px">Pick a challenge to load its starting network. Your current canvas will be replaced.</p>';
+  }
+  return h;
+}
+function renderSide(){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===tab)));
+  $("side").innerHTML = tab==="device"?viewDevice(): tab==="traffic"?viewTraffic(): viewChallenges();
+}
+function render(){ renderBoard(); renderSide(); }
+function changed(){ lastRun=null; save(); render(); }
+
+/* ---------------- palette ---------------- */
+$("palette").innerHTML = ORDER.map(k=>'<button class="pal" type="button" data-add="'+k+'"><i class="fa-solid '+TYPES[k].fa+'"></i>'+TYPES[k].label+'</button>').join("");
+$("palette").addEventListener("click",e=>{
+  const b=e.target.closest("[data-add]"); if(!b) return;
+  if(b.dataset.add==="cloud" && by("cloud").length){ toast("There is already an Internet cloud on the canvas."); return; }
+  const d=addDevice(b.dataset.add); S.example=false; sel={kind:"device",id:d.id}; tab="device"; changed();
+});
+
+/* ---------------- board interaction ---------------- */
+function pt(e){ const p=board.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; const m=board.getScreenCTM(); return m? p.matrixTransform(m.inverse()) : {x:0,y:0}; }
+function nodeAt(p, except){ let best=null, bd=1e9; for(const d of S.devices){ if(d.id===except) continue; const dx=Math.abs(d.x-p.x), dy=Math.abs(d.y-p.y); if(dx<=BW/2+10&&dy<=BH/2+10){ const dd=dx+dy; if(dd<bd){bd=dd;best=d;} } } return best; }
+let drag=null, wiring=null;
+board.addEventListener("pointerdown",e=>{
+  if(anim) return;
+  const h=e.target.closest("[data-handle]"), n=e.target.closest("[data-node]"), l=e.target.closest("[data-link]");
+  if(h){ wiring={from:h.dataset.handle}; const d=dev(wiring.from), g=$("ghost"); g.setAttribute("x1",d.x); g.setAttribute("y1",d.y); g.setAttribute("x2",d.x); g.setAttribute("y2",d.y); g.setAttribute("visibility","visible"); board.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+  if(n){ const d=dev(n.dataset.node), p=pt(e); drag={id:d.id, dx:p.x-d.x, dy:p.y-d.y, moved:false}; if(!sel||sel.id!==d.id){ sel={kind:"device",id:d.id}; tab="device"; render(); } board.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+  if(l){ sel={kind:"link",id:l.dataset.link}; tab="device"; render(); return; }
+  if(sel){ sel=null; render(); }
+});
+board.addEventListener("pointermove",e=>{
+  if(drag){ const d=dev(drag.id), p=pt(e); d.x=Math.max(BW/2+6,Math.min(W-BW/2-6,Math.round(p.x-drag.dx))); d.y=Math.max(BH/2+6,Math.min(H-BH/2-26,Math.round(p.y-drag.dy))); drag.moved=true; renderBoard(); }
+  else if(wiring){ const p=pt(e), g=$("ghost"), t=nodeAt(p,wiring.from); g.setAttribute("x2",t?t.x:p.x); g.setAttribute("y2",t?t.y:p.y); }
+});
+function endPointer(e){
+  if(wiring){ const p=pt(e), t=nodeAt(p,wiring.from); $("ghost").setAttribute("visibility","hidden");
+    if(t){ if(connect(wiring.from,t.id)){ S.example=false; toast("Connected "+dev(wiring.from).name+" to "+t.name+"."); changed(); } }
+    wiring=null; }
+  if(drag){ if(drag.moved){ save(); } drag=null; }
+}
+board.addEventListener("pointerup",endPointer);
+board.addEventListener("pointercancel",endPointer);
+document.addEventListener("keydown",e=>{
+  if((e.key==="Delete"||e.key==="Backspace") && sel && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){ e.preventDefault(); deleteSel(); }
+});
+function deleteSel(){ if(!sel) return; if(sel.kind==="device") removeDevice(sel.id); else S.links=S.links.filter(l=>l.id!==sel.id); sel=null; S.example=false; changed(); }
+$("banner").addEventListener("click",e=>{ if(e.target.id==="bannerX"){ S.example=false; save(); renderBoard(); } });
+
+/* ---------------- side interaction ---------------- */
+document.querySelector(".tabs").addEventListener("click",e=>{ const b=e.target.closest("[data-tab]"); if(!b) return; tab=b.dataset.tab; renderSide(); });
+$("side").addEventListener("input",e=>{
+  if(e.target.id==="dName"&&sel){ const d=dev(sel.id); d.name=e.target.value.replace(/[^\w\- ]/g,"").slice(0,14)||d.name; save(); renderBoard(); }
+});
+$("side").addEventListener("change",e=>{
+  const id=e.target.id;
+  if(id==="dZone"&&sel){ dev(sel.id).zone=e.target.value; changed(); }
+  else if(id==="tSrc"){ T.src=e.target.value; }
+  else if(id==="tDst"){ T.dst=e.target.value; }
+  else if(id==="tSvc"){ T.svc=e.target.value; }
+});
+$("side").addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b||b.disabled) return; const a=b.dataset.act;
+  if(a==="del") deleteSel();
+  else if(a==="addrule"){ const d=dev(sel.id); d.rules=d.rules||[]; d.rules.push(rule($("rFrom").value,$("rTo").value,$("rSvc").value,$("rAct").value)); toast("Rule "+d.rules.length+" added."); changed(); }
+  else if(a==="delrule"){ const d=dev(sel.id); d.rules.splice(Number(b.dataset.i),1); changed(); }
+  else if(a==="send") run(T.src,T.dst,T.svc);
+  else if(a==="preset"){ T.src=b.dataset.s; T.dst=b.dataset.d; T.svc=b.dataset.v; run(T.src,T.dst,T.svc); }
+  else if(a==="pick"){ startChallenge(Number(b.dataset.i)); }
+  else if(a==="restartch"){ startChallenge(S.active); }
+  else if(a==="check"){ const c=CHALLENGES[S.active]; const r=c.objs.map(o=>{ try{ return !!o.f() }catch(err){ return false } }); checkRes={ch:S.active,r}; if(r.every(Boolean)){ S.done[S.active]=true; save(); } renderSide(); }
+});
+function startChallenge(i){
+  STARTERS[CHALLENGES[i].starter](); S.active=i; S.example=false; sel=null; lastRun=null; checkRes=null; tab="challenges"; save(); render();
+  toast("Challenge "+(i+1)+": "+CHALLENGES[i].title);
+}
+
+/* ---------------- packet animation ---------------- */
+function run(src,dst,svc){
+  if(anim) return;
+  const r=simulate(src,dst,svc);
+  lastRun={result:r, shown:0, hop:0, done:false};
+  tab="traffic";
+  if(!r.path){ lastRun.shown=r.steps.length; lastRun.done=true; render(); return; }
+  const stopIdx = r.blockedAt ? r.path.indexOf(r.blockedAt) : r.path.length-1;
+  const stepFor = id => r.steps.findIndex(s=>s.dev===id && s.chip!=="IDS");
+  if(reduce){ lastRun.hop=stopIdx; lastRun.shown=r.steps.length; lastRun.done=true; render(); return; }
+  lastRun.shown=1; render();
+  const g=$("gPackets"); const c=document.createElementNS(SVGNS,"circle"); c.setAttribute("r","9"); c.setAttribute("class","packet"); g.appendChild(c);
+  const pos = i => { const d=dev(r.path[i]); return {x:d.x,y:d.y}; };
+  let i=0, t0=null; const SEG=520;
+  anim=true; renderSide();
+  function frame(ts){
+    if(t0===null) t0=ts;
+    const a=pos(i), b=pos(Math.min(i+1,stopIdx)), k=Math.min(1,(ts-t0)/SEG);
+    c.setAttribute("cx", a.x+(b.x-a.x)*k); c.setAttribute("cy", a.y+(b.y-a.y)*k);
+    if(k>=1){
+      i++; t0=ts; lastRun.hop=i;
+      const si=stepFor(r.path[i]); if(si>=0) lastRun.shown=Math.max(lastRun.shown, si+1);
+      if(i>=stopIdx){
+        lastRun.shown=r.steps.length; lastRun.done=true; anim=null;
+        if(!r.ok) c.setAttribute("class","packet bad");
+        render(); g.appendChild(c); setTimeout(()=>{ c.remove(); },1400); return;
+      }
+      render(); g.appendChild(c);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- header buttons ---------------- */
+$("btnExample").addEventListener("click",()=>{ buildExample(); tab="traffic"; save(); render(); toast("Example network loaded."); });
+let clearArm=false, clearT;
+$("btnClear").addEventListener("click",()=>{
+  const b=$("btnClear");
+  if(!clearArm && S.devices.length){ clearArm=true; b.innerHTML='<i class="fa-solid fa-trash"></i> Click again to clear'; clearT=setTimeout(()=>{clearArm=false; b.innerHTML='<i class="fa-solid fa-trash"></i> Clear canvas';},3000); return; }
+  clearTimeout(clearT); clearArm=false; b.innerHTML='<i class="fa-solid fa-trash"></i> Clear canvas';
+  S.devices=[]; S.links=[]; S.example=false; S.active=null; sel=null; checkRes=null; changed();
+});
+
+/* ---------------- boot ---------------- */
+const saved=load();
+if(saved){ S=Object.assign({devices:[],links:[],active:null,done:{},example:false}, saved); }
+else { buildExample(); tab="traffic"; }
+render();
+})();
+</script>
 </body>
 </html>
